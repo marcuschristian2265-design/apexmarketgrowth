@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; }
+    .btn-primary { background: var(--maroon); color: #fff; transition: background .2s; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .input-field {
+      width: 100%; border: 1.5px solid #e5e7eb; border-radius: 12px;
+      padding: 0 16px; height: 50px; font-size: 14px; outline: none;
+      font-family: 'Poppins', sans-serif; transition: border .2s;
+      background: #fff;
+    }
+    .input-field:focus { border-color: var(--maroon); }
+    .bg-hero {
+      background-image: url('https://images.unsplash.com/photo-1642790550964-70b1eac5ed78?auto=format&fit=crop&w=2400&q=80');
+      background-size: cover; background-position: center;
+    }
+    .bg-hero::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to bottom right, rgba(134,21,53,.85), rgba(0,0,0,.7));
+    }
+    .error-msg { display: none; color: #dc2626; font-size: 13px; margin-top: 6px; }
+    .error-msg.show { display: block; }
+    .strength-bar { height: 4px; border-radius: 999px; transition: width .3s, background .3s; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+
+  <!-- Left panel -->
+  <div class="hidden lg:flex lg:w-1/2 relative bg-hero items-center justify-center p-12">
+    <div class="relative z-10 text-white text-center">
+      <a href="index.html" class="text-4xl font-black tracking-widest block mb-6">AMG.</a>
+      <h2 class="text-3xl font-black leading-tight mb-4">Start your journey.<br>Grow with confidence.</h2>
+      <p class="text-white/75 text-base max-w-sm mx-auto">
+        Join ApexMarketGrowth and get access to curated investment plans across crypto, forex, gold and indices.
+      </p>
+      <div class="mt-10 space-y-4 max-w-xs mx-auto text-left">
+        <div class="flex items-center gap-4 bg-white/10 border border-white/20 rounded-2xl p-4">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 font-black text-sm shrink-0">01</div>
+          <div>
+            <div class="font-semibold text-sm">Create your account</div>
+            <div class="text-white/65 text-xs mt-0.5">Fill in your details below</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 bg-white/10 border border-white/20 rounded-2xl p-4">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 font-black text-sm shrink-0">02</div>
+          <div>
+            <div class="font-semibold text-sm">Save your seed phrase</div>
+            <div class="text-white/65 text-xs mt-0.5">12 words for account recovery</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 bg-white/10 border border-white/20 rounded-2xl p-4">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 font-black text-sm shrink-0">03</div>
+          <div>
+            <div class="font-semibold text-sm">Start investing</div>
+            <div class="text-white/65 text-xs mt-0.5">Deposit, pick a plan, track growth</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center px-6 py-12">
+    <div class="w-full max-w-md">
+
+      <div class="lg:hidden text-center mb-8">
+        <a href="index.html" class="text-3xl font-black tracking-widest" style="color:var(--maroon)">AMG.</a>
+      </div>
+
+      <div class="mb-8">
+        <h1 class="text-3xl font-black text-gray-900">Create account</h1>
+        <p class="mt-2 text-gray-500 text-sm">Fill in the details below to get started.</p>
+      </div>
+
+      <div class="space-y-5">
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Full name</label>
+          <input id="regName" type="text" class="input-field" placeholder="John Doe" />
+          <div class="error-msg" id="nameErr">Please enter your full name.</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Email address</label>
+          <input id="regEmail" type="email" class="input-field" placeholder="you@example.com" />
+          <div class="error-msg" id="emailErr">Please enter a valid email.</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Phone number <span class="text-gray-400 font-normal">(optional)</span></label>
+          <input id="regPhone" type="tel" class="input-field" placeholder="+1 000 000 0000" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+          <select id="regCountry" class="input-field">
+            <option value="">Select your country</option>
+            <option>United States</option><option>United Kingdom</option>
+            <option>Nigeria</option><option>Canada</option>
+            <option>Australia</option><option>Germany</option>
+            <option>France</option><option>South Africa</option>
+            <option>India</option><option>UAE</option><option>Other</option>
+          </select>
+          <div class="error-msg" id="countryErr">Please select your country.</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+          <div class="relative">
+            <input id="regPassword" type="password" class="input-field pr-12" placeholder="Min. 8 characters" oninput="checkStrength()" />
+            <button type="button" id="togglePwd" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="mt-2 bg-gray-200 rounded-full h-1">
+            <div id="strengthBar" class="strength-bar bg-gray-200" style="width:0%"></div>
+          </div>
+          <div id="strengthLabel" class="text-xs text-gray-400 mt-1"></div>
+          <div class="error-msg" id="pwdErr">Password must be at least 8 characters.</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm password</label>
+          <input id="regConfirm" type="password" class="input-field" placeholder="Re-enter password" />
+          <div class="error-msg" id="confirmErr">Passwords do not match.</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Referral code <span class="text-gray-400 font-normal">(optional)</span></label>
+          <input id="regRef" type="text" class="input-field" placeholder="e.g. AMG-12345" />
+        </div>
+
+        <div class="flex items-start gap-3">
+          <input id="agreeTerms" type="checkbox" class="w-4 h-4 mt-0.5 accent-red-800 shrink-0" />
+          <label for="agreeTerms" class="text-sm text-gray-600 leading-relaxed">
+            I agree to the <a href="#" class="font-semibold underline" style="color:var(--maroon)">Terms of Service</a> and <a href="#" class="font-semibold underline" style="color:var(--maroon)">Privacy Policy</a>
+          </label>
+        </div>
+        <div class="error-msg" id="termsErr">You must agree to the terms to continue.</div>
+
+        <div id="firebaseErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm"></div>
+
+        <button id="submitBtn" onclick="handleRegister()" class="btn-primary w-full py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2">
+          <svg id="spinner" class="hidden animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <span id="btnText">Create Account</span>
+        </button>
+
+        <p class="text-center text-sm text-gray-500">
+          Already have an account?
+          <a href="login.html" class="font-semibold" style="color:var(--maroon)">Sign in</a>
+        </p>
+
+      </div>
+
+      <div class="mt-6 text-center">
+        <a href="index.html" class="text-sm text-gray-400 hover:text-gray-600">← Back to homepage</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDrwqA-_CK-22E7PsNlSAIw-bXWN6Dl-mU",
+      authDomain: "apexmarketgrowth.firebaseapp.com",
+      projectId: "apexmarketgrowth",
+      storageBucket: "apexmarketgrowth.firebasestorage.app",
+      messagingSenderId: "81223871224",
+      appId: "1:81223871224:web:1cf05fadc6e24f90aee90d"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // Password strength
+    window.checkStrength = function() {
+      const val = document.getElementById('regPassword').value;
+      const bar = document.getElementById('strengthBar');
+      const label = document.getElementById('strengthLabel');
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const levels = [
+        { w:'0%', bg:'#e5e7eb', text:'' },
+        { w:'25%', bg:'#ef4444', text:'Weak' },
+        { w:'50%', bg:'#f97316', text:'Fair' },
+        { w:'75%', bg:'#eab308', text:'Good' },
+        { w:'100%', bg:'#22c55e', text:'Strong' },
+      ];
+      const l = levels[score] || levels[0];
+      bar.style.width = l.w; bar.style.background = l.bg;
+      label.textContent = l.text; label.style.color = l.bg;
+    }
+
+    // Toggle password
+    document.getElementById('togglePwd').addEventListener('click', () => {
+      const p = document.getElementById('regPassword');
+      p.type = p.type === 'password' ? 'text' : 'password';
+    });
+
+    // Generate 12-word seed phrase
+    function generateSeedPhrase() {
+      const words = [
+        'apple','bridge','candle','dragon','eagle','forest','guitar','harbor',
+        'island','jungle','kernel','lemon','mango','noble','ocean','planet',
+        'queen','river','silver','thunder','umbrella','valley','winter','anchor',
+        'breeze','crystal','diamond','empire','falcon','garden','hollow','ivy',
+        'jewel','knight','lantern','marble','nectar','orbit','pepper','quartz',
+        'rapids','sunset','tower','universe','violet','whisper','yarn','zenith',
+        'amber','bronze','cobalt','dusk','ember','frost','glacier','horizon',
+        'ignite','jade','kindle','lunar','mystic','nova','onyx','prism',
+        'raven','storm','tide','vortex','wave','blaze','cipher','drift',
+        'echo','flame','glory','haven','ionic','jovial','karma','lyric'
+      ];
+      const phrase = [];
+      const used = new Set();
+      while (phrase.length < 12) {
+        const w = words[Math.floor(Math.random() * words.length)];
+        if (!used.has(w)) { phrase.push(w); used.add(w); }
+      }
+      return phrase;
+    }
+
+    // Register handler
+    window.handleRegister = async function() {
+      const name    = document.getElementById('regName').value.trim();
+      const email   = document.getElementById('regEmail').value.trim();
+      const phone   = document.getElementById('regPhone').value.trim();
+      const country = document.getElementById('regCountry').value;
+      const pwd     = document.getElementById('regPassword').value;
+      const confirm = document.getElementById('regConfirm').value;
+      const ref     = document.getElementById('regRef').value.trim();
+      const terms   = document.getElementById('agreeTerms').checked;
+      let valid = true;
+
+      document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('show'));
+      document.getElementById('firebaseErr').classList.add('hidden');
+
+      if (!name)    { document.getElementById('nameErr').classList.add('show'); valid = false; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('emailErr').classList.add('show'); valid = false; }
+      if (!country) { document.getElementById('countryErr').classList.add('show'); valid = false; }
+      if (pwd.length < 8) { document.getElementById('pwdErr').classList.add('show'); valid = false; }
+      if (pwd !== confirm) { document.getElementById('confirmErr').classList.add('show'); valid = false; }
+      if (!terms)   { document.getElementById('termsErr').classList.add('show'); valid = false; }
+      if (!valid) return;
+
+      // Show loading
+      document.getElementById('spinner').classList.remove('hidden');
+      document.getElementById('btnText').textContent = 'Creating account...';
+      document.getElementById('submitBtn').disabled = true;
+
+      try {
+        // Create Firebase Auth user
+        const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+        await updateProfile(cred.user, { displayName: name });
+
+        // Generate seed phrase
+        const seedPhrase = generateSeedPhrase();
+
+        // Save to Firestore
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          uid: cred.user.uid,
+          fullName: name,
+          email: email,
+          phone: phone || '',
+          country: country,
+          referralCode: ref || '',
+          balance: 0,
+          totalDeposits: 0,
+          totalWithdrawals: 0,
+          totalEarnings: 0,
+          activePlan: null,
+          status: 'active',
+          role: 'user',
+          seedPhrase: seedPhrase,
+          seedVerified: false,
+          createdAt: serverTimestamp()
+        });
+
+        // Pass seed to next page via sessionStorage
+        sessionStorage.setItem('amg_seed', JSON.stringify(seedPhrase));
+        sessionStorage.setItem('amg_uid', cred.user.uid);
+        sessionStorage.setItem('amg_name', name);
+
+        // Save welcome notification to Firestore
+        await addDoc(collection(db, 'notifications'), {
+          userId:    cred.user.uid,
+          type:      'welcome',
+          title:     'Welcome to ApexMarketGrowth! 🎉',
+          message:   `Hi ${name}, your account has been created successfully. Start by making your first deposit to activate your investment journey.`,
+          read:      false,
+          createdAt: serverTimestamp()
+        });
+
+        // Go to seed phrase page
+        window.location.href = 'seedphrase.html';
+
+      } catch (err) {
+        let msg = 'Something went wrong. Please try again.';
+        if (err.code === 'auth/email-already-in-use') msg = 'This email is already registered. Please login instead.';
+        if (err.code === 'auth/weak-password') msg = 'Password is too weak. Please choose a stronger one.';
+        if (err.code === 'auth/invalid-email') msg = 'Invalid email address format.';
+        const errEl = document.getElementById('firebaseErr');
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+        document.getElementById('spinner').classList.add('hidden');
+        document.getElementById('btnText').textContent = 'Create Account';
+        document.getElementById('submitBtn').disabled = false;
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') window.handleRegister(); });
+  </script>
+</body>
+</html>

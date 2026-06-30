@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; --maroon-light: #b24a63; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f3f4f6; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px; min-height: 100vh;
+      background: #111827;
+      position: fixed; top: 0; left: 0; z-index: 40;
+      display: flex; flex-direction: column;
+      transition: transform .3s ease;
+    }
+    .sidebar.closed { transform: translateX(-260px); }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; border-radius: 12px; margin: 2px 12px;
+      color: #9ca3af; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .2s; border: none; background: none;
+      width: calc(100% - 24px); text-align: left;
+    }
+    .nav-link:hover { background: #1f2937; color: #fff; }
+    .nav-link.active { background: var(--maroon); color: #fff; }
+    .nav-link svg { width: 20px; height: 20px; shrink: 0; flex-shrink: 0; }
+
+    /* ── Main content ── */
+    .main { margin-left: 260px; min-height: 100vh; transition: margin .3s ease; }
+    .main.expanded { margin-left: 0; }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: #fff; border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 30;
+    }
+
+    /* ── Cards ── */
+    .stat-card { background: #fff; border-radius: 20px; padding: 20px; border: 1px solid #e5e7eb; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Plan cards ── */
+    .plan-card { border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb; transition: box-shadow .2s; cursor: pointer; }
+    .plan-card:hover { box-shadow: 0 8px 30px rgba(134,21,53,.12); }
+    .plan-card.selected { border: 2px solid var(--maroon); box-shadow: 0 8px 30px rgba(134,21,53,.15); }
+
+    /* ── Input ── */
+    .input-field {
+      width: 100%; border: 1.5px solid #e5e7eb; border-radius: 12px;
+      padding: 0 16px; height: 50px; font-size: 14px; outline: none;
+      font-family: 'Poppins', sans-serif; transition: border .2s; background: #fff;
+    }
+    .input-field:focus { border-color: var(--maroon); }
+    select.input-field { cursor: pointer; }
+
+    /* ── Buttons ── */
+    .btn-primary { background: var(--maroon); color: #fff; border: none; cursor: pointer; transition: background .2s; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .btn-outline { border: 1.5px solid var(--maroon); color: var(--maroon); background: none; cursor: pointer; transition: all .2s; }
+    .btn-outline:hover { background: var(--maroon); color: #fff; }
+
+    /* ── Status badges ── */
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+    .badge-approved { background: #d1fae5; color: #065f46; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-active   { background: #dbeafe; color: #1e40af; }
+
+    /* ── Crypto tabs ── */
+    .crypto-tab { padding: 10px 18px; border-radius: 10px; border: 1.5px solid #e5e7eb; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; background: #fff; }
+    .crypto-tab.active { background: var(--maroon); color: #fff; border-color: var(--maroon); }
+
+    /* ── Mobile overlay ── */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 39; }
+    .overlay.show { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-260px); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Close notifications on outside click -->
+<script>
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notifPanel');
+  const bell  = panel?.previousElementSibling;
+  if (panel && !panel.classList.contains('hidden') &&
+      !panel.contains(e.target) && !bell?.contains(e.target)) {
+    panel.classList.add('hidden');
+  }
+});
+</script>
+
+<!-- Mobile overlay -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- Logo -->
+  <div class="p-6 border-b border-gray-700">
+    <div class="text-2xl font-black tracking-widest text-white">AMG.</div>
+    <div class="text-xs text-gray-500 mt-1">Investment Platform</div>
+  </div>
+
+  <!-- User info -->
+  <div class="px-5 py-4 border-b border-gray-700">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:var(--maroon)" id="avatarCircle">?</div>
+      <div>
+        <div class="text-sm font-bold text-white" id="sidebarName">Loading...</div>
+        <div class="text-xs text-gray-500" id="sidebarEmail">...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav links -->
+  <nav class="flex-1 py-4 overflow-y-auto">
+    <div class="px-5 mb-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">Main Menu</div>
+
+    <button class="nav-link active" onclick="showSection('overview')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Overview
+    </button>
+
+    <button class="nav-link" onclick="showSection('deposit')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Deposit
+    </button>
+
+    <button class="nav-link" onclick="showSection('withdraw')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+      Withdrawal
+    </button>
+
+    <button class="nav-link" onclick="showSection('plans')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Select Plan
+    </button>
+
+    <button class="nav-link" onclick="showSection('history')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Transaction History
+    </button>
+
+    <button class="nav-link" onclick="showSection('copytrade')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Copy Trading
+    </button>
+
+    <button class="nav-link" onclick="window.location.href='support.html'">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      Support
+    </button>
+
+    <div class="px-5 mt-4 mb-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">Account</div>
+
+    <button class="nav-link" onclick="showSection('settings')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Settings
+    </button>
+
+    <button class="nav-link text-red-400 hover:text-red-300" onclick="handleLogout()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Log Out
+    </button>
+  </nav>
+
+  <!-- Balance snippet -->
+  <div class="p-5 border-t border-gray-700">
+    <div class="text-xs text-gray-500 font-semibold">Available Balance</div>
+    <div class="text-xl font-black text-white mt-1" id="sidebarBalance">$0.00</div>
+  </div>
+
+</aside>
+
+<!-- ══════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════ -->
+<div class="main" id="main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="flex items-center gap-3">
+      <!-- Hamburger -->
+      <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-gray-100">
+        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div>
+        <div class="text-sm font-bold text-gray-900" id="pageTitle">Overview</div>
+        <div class="text-xs text-gray-400" id="pageDate"></div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Notifications bell -->
+      <div class="relative">
+        <button onclick="toggleNotifications()" class="p-2 rounded-xl hover:bg-gray-100 relative">
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">0</span>
+        </button>
+        <div id="notifPanel" class="hidden absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50">
+          <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="text-sm font-bold text-gray-900">Notifications</div>
+            <button onclick="markAllRead()" class="text-xs font-semibold" style="color:var(--maroon)">Mark all read</button>
+          </div>
+          <div id="notifList" class="max-h-80 overflow-y-auto">
+            <div class="text-center py-8 text-gray-400 text-sm">No notifications</div>
+          </div>
+        </div>
+      </div>
+      <!-- Support link -->
+      <a href="support.html" class="p-2 rounded-xl hover:bg-gray-100" title="Support">
+        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+      </a>
+      <div class="text-right hidden sm:block">
+        <div class="text-xs text-gray-500">Balance</div>
+        <div class="text-sm font-black text-gray-900" id="topbarBalance">$0.00</div>
+      </div>
+      <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:var(--maroon)" id="topbarAvatar">?</div>
+    </div>
+  </div>
+
+  <!-- Page content -->
+  <div class="p-6">
+
+    <!-- ══ OVERVIEW ══ -->
+    <div class="section active" id="sec-overview">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Welcome back, <span id="welcomeName">User</span> 👋</h2>
+        <p class="text-gray-500 text-sm mt-1">Here's your portfolio summary.</p>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Balance</div>
+          <div class="text-2xl font-black text-gray-900 mt-2" id="statBalance">$0.00</div>
+          <div class="text-xs text-gray-400 mt-1">Available funds</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Deposits</div>
+          <div class="text-2xl font-black text-gray-900 mt-2" id="statDeposits">$0.00</div>
+          <div class="text-xs text-gray-400 mt-1">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Earnings</div>
+          <div class="text-2xl font-black text-gray-900 mt-2" id="statEarnings">$0.00</div>
+          <div class="text-xs text-gray-400 mt-1">From plans</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Withdrawals</div>
+          <div class="text-2xl font-black text-gray-900 mt-2" id="statWithdrawals">$0.00</div>
+          <div class="text-xs text-gray-400 mt-1">All time</div>
+        </div>
+      </div>
+
+      <!-- Active plan + quick actions -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="stat-card">
+          <div class="text-sm font-bold text-gray-700 mb-3">Active Plan</div>
+          <div id="activePlanBox">
+            <div class="text-center py-6">
+              <div class="text-gray-400 text-sm">No active plan</div>
+              <button onclick="showSection('plans')" class="mt-3 btn-primary px-5 py-2 rounded-xl text-sm font-semibold">Browse Plans</button>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="text-sm font-bold text-gray-700 mb-3">Quick Actions</div>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="showSection('deposit')" class="btn-primary py-3 rounded-xl text-sm font-semibold">+ Deposit</button>
+            <button onclick="showSection('withdraw')" class="btn-outline py-3 rounded-xl text-sm font-semibold">Withdraw</button>
+            <button onclick="showSection('plans')" class="btn-outline py-3 rounded-xl text-sm font-semibold">Select Plan</button>
+            <button onclick="showSection('history')" class="btn-outline py-3 rounded-xl text-sm font-semibold">History</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent transactions -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-sm font-bold text-gray-700">Recent Transactions</div>
+          <button onclick="showSection('history')" class="text-xs font-semibold" style="color:var(--maroon)">View all →</button>
+        </div>
+        <div id="recentTxList">
+          <div class="text-center py-8 text-gray-400 text-sm">No transactions yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DEPOSIT ══ -->
+    <div class="section" id="sec-deposit">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Deposit Funds</h2>
+        <p class="text-gray-500 text-sm mt-1">Choose a cryptocurrency and send to the wallet address below.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="stat-card">
+          <div class="text-sm font-bold text-gray-700 mb-4">Select Cryptocurrency</div>
+
+          <!-- Crypto tabs -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <button class="crypto-tab active" onclick="selectCrypto('BTC', this)">BTC</button>
+            <button class="crypto-tab" onclick="selectCrypto('ETH', this)">ETH</button>
+            <button class="crypto-tab" onclick="selectCrypto('USDT', this)">USDT</button>
+            <button class="crypto-tab" onclick="selectCrypto('BNB', this)">BNB</button>
+            <button class="crypto-tab" onclick="selectCrypto('LTC', this)">LTC</button>
+          </div>
+
+          <!-- Wallet address -->
+          <div class="mb-4">
+            <div class="text-xs font-semibold text-gray-500 mb-2">Wallet Address</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-2">
+              <div class="text-xs font-mono text-gray-700 break-all" id="walletAddress">Loading...</div>
+              <button onclick="copyWallet()" class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" id="copyWalletBtn">Copy</button>
+            </div>
+          </div>
+
+          <!-- Amount input -->
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-500 mb-2">Amount (USD)</label>
+            <input type="number" id="depositAmount" class="input-field" placeholder="Enter amount e.g. 500" min="10" />
+          </div>
+
+          <!-- Upload proof -->
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-gray-500 mb-2">Upload Payment Proof</label>
+            <div class="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center cursor-pointer hover:border-gray-300 transition" onclick="document.getElementById('proofFile').click()">
+              <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <div class="text-sm text-gray-400" id="proofLabel">Click to upload screenshot</div>
+              <input type="file" id="proofFile" class="hidden" accept="image/*" onchange="handleProofUpload(this)" />
+            </div>
+          </div>
+
+          <div id="depositErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4"></div>
+          <div id="depositSuccess" class="hidden bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mb-4"></div>
+
+          <button onclick="submitDeposit()" class="btn-primary w-full py-3 rounded-xl font-semibold">
+            Submit Deposit Request
+          </button>
+        </div>
+
+        <!-- QR Code panel -->
+        <div class="stat-card text-center">
+          <div class="text-sm font-bold text-gray-700 mb-2" id="qrCryptoName">Bitcoin (BTC)</div>
+          <div class="text-xs text-gray-400 mb-4">Scan QR code to send payment</div>
+
+          <!-- QR code image — replace src with your actual QR images -->
+          <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 inline-block">
+            <img id="qrImage" src="assets/qr/btc-qr.jpeg" alt="QR Code"
+                 class="w-48 h-48 object-contain mx-auto"
+                 onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(document.getElementById(\'walletAddress\').textContent)" />
+          </div>
+
+          <div class="mt-4 text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
+            Send only <strong id="qrCryptoShort">BTC</strong> to this address. Sending any other coin may result in permanent loss.
+          </div>
+
+          <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-left">
+            <div class="text-xs font-semibold text-yellow-800 mb-1">⚠️ Important</div>
+            <div class="text-xs text-yellow-700 leading-relaxed">
+              After sending, upload your payment screenshot and click Submit. Your deposit will be reviewed and approved within 24 hours.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ WITHDRAWAL ══ -->
+    <div class="section" id="sec-withdraw">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Request Withdrawal</h2>
+        <p class="text-gray-500 text-sm mt-1">Withdrawals are processed within 24–48 hours after review.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="stat-card">
+          <div class="mb-4 bg-gray-50 rounded-2xl p-4">
+            <div class="text-xs text-gray-500 font-semibold">Available Balance</div>
+            <div class="text-2xl font-black text-gray-900 mt-1" id="withdrawBalance">$0.00</div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Withdrawal Amount (USD)</label>
+              <input type="number" id="withdrawAmount" class="input-field" placeholder="Enter amount" min="10" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Cryptocurrency</label>
+              <select id="withdrawCrypto" class="input-field">
+                <option value="">Select crypto</option>
+                <option>BTC</option><option>ETH</option>
+                <option>USDT</option><option>BNB</option><option>LTC</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Your Wallet Address</label>
+              <input type="text" id="withdrawWallet" class="input-field" placeholder="Enter your receiving wallet address" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Additional Notes (optional)</label>
+              <textarea id="withdrawNotes" class="input-field h-20 py-3" style="height:80px;resize:none" placeholder="Any notes for the admin..."></textarea>
+            </div>
+          </div>
+
+          <div id="withdrawErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mt-4"></div>
+          <div id="withdrawSuccess" class="hidden bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mt-4"></div>
+
+          <button onclick="submitWithdrawal()" class="btn-primary w-full py-3 rounded-xl font-semibold mt-5">
+            Submit Withdrawal Request
+          </button>
+        </div>
+
+        <div class="stat-card">
+          <div class="text-sm font-bold text-gray-700 mb-4">Withdrawal Info</div>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5" style="background:var(--maroon)">1</div>
+              <div class="text-sm text-gray-600">Submit your withdrawal request with your wallet address.</div>
+            </div>
+            <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5" style="background:var(--maroon)">2</div>
+              <div class="text-sm text-gray-600">Admin reviews and approves within 24–48 hours.</div>
+            </div>
+            <div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5" style="background:var(--maroon)">3</div>
+              <div class="text-sm text-gray-600">Funds are sent to your provided wallet address.</div>
+            </div>
+          </div>
+          <div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div class="text-xs font-bold text-blue-800 mb-1">Minimum Withdrawal</div>
+            <div class="text-sm text-blue-700">$50.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SELECT PLAN ══ -->
+    <div class="section" id="sec-plans">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Investment Plans</h2>
+        <p class="text-gray-500 text-sm mt-1">Choose a plan that matches your timeline and budget.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="plansGrid">
+        <!-- Plans loaded from JS -->
+      </div>
+
+      <!-- Invest confirmation -->
+      <div id="investPanel" class="hidden mt-6 stat-card max-w-md">
+        <div class="text-sm font-bold text-gray-700 mb-3">Confirm Investment</div>
+        <div id="investSummary" class="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 mb-4"></div>
+        <div id="investErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4"></div>
+        <div id="investSuccess" class="hidden bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mb-4"></div>
+        <div class="flex gap-3">
+          <button onclick="confirmInvest()" class="btn-primary flex-1 py-3 rounded-xl font-semibold text-sm">Confirm & Invest</button>
+          <button onclick="document.getElementById('investPanel').classList.add('hidden')" class="btn-outline flex-1 py-3 rounded-xl font-semibold text-sm">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Active investments table -->
+      <div class="stat-card mt-6 overflow-x-auto">
+        <div class="text-sm font-bold text-gray-700 mb-4">My Active Investments</div>
+        <table class="w-full" style="border-collapse:collapse">
+          <thead>
+            <tr style="background:#f8fafc">
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Plan</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Amount</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">ROI</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Duration</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Started</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Progress</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Earned So Far</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0">Status</th>
+            </tr>
+          </thead>
+          <tbody id="myInvestmentsBody">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;font-size:13px">No active investments yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ TRANSACTION HISTORY ══ -->
+    <div class="section" id="sec-history">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Transaction History</h2>
+        <p class="text-gray-500 text-sm mt-1">All your deposits, withdrawals and investments.</p>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="flex gap-2 flex-wrap mb-5">
+        <button class="crypto-tab active" onclick="filterTx('all', this)">All</button>
+        <button class="crypto-tab" onclick="filterTx('deposit', this)">Deposits</button>
+        <button class="crypto-tab" onclick="filterTx('withdrawal', this)">Withdrawals</button>
+        <button class="crypto-tab" onclick="filterTx('copytrade', this)">Copy Trades</button>
+        <button class="crypto-tab" onclick="filterTx('investment', this)">Investments</button>
+      </div>
+
+      <div class="stat-card">
+        <div id="txList">
+          <div class="text-center py-12 text-gray-400 text-sm">No transactions yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ COPY TRADING ══ -->
+    <div class="section" id="sec-copytrade">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Copy Trading</h2>
+        <p class="text-gray-500 text-sm mt-1">Allocate funds to expert traders and earn passively. All trades run for 5 days.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="stat-card">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:var(--maroon)">JK</div>
+            <div><div class="font-bold text-gray-900">James K.</div><div class="text-xs text-gray-500">Crypto Specialist</div></div>
+            <div class="ml-auto text-right"><div class="text-xs text-gray-500">ROI</div><div class="font-black text-green-600">+24.5%</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-4">
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">342</div><div class="text-xs text-gray-500">Followers</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">87%</div><div class="text-xs text-gray-500">Win rate</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">5 days</div><div class="text-xs text-gray-500">Duration</div></div>
+          </div>
+          <button onclick="openCopyModal('James K.',24.5,'Crypto Specialist','JK','#861535')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:#1e40af">SM</div>
+            <div><div class="font-bold text-gray-900">Sarah M.</div><div class="text-xs text-gray-500">Forex Expert</div></div>
+            <div class="ml-auto text-right"><div class="text-xs text-gray-500">ROI</div><div class="font-black text-green-600">+18.2%</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-4">
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">521</div><div class="text-xs text-gray-500">Followers</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">91%</div><div class="text-xs text-gray-500">Win rate</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">5 days</div><div class="text-xs text-gray-500">Duration</div></div>
+          </div>
+          <button onclick="openCopyModal('Sarah M.',18.2,'Forex Expert','SM','#1e40af')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:#065f46">RO</div>
+            <div><div class="font-bold text-gray-900">Robert O.</div><div class="text-xs text-gray-500">Gold & Indices</div></div>
+            <div class="ml-auto text-right"><div class="text-xs text-gray-500">ROI</div><div class="font-black text-green-600">+31.8%</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-4">
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">198</div><div class="text-xs text-gray-500">Followers</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">79%</div><div class="text-xs text-gray-500">Win rate</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">5 days</div><div class="text-xs text-gray-500">Duration</div></div>
+          </div>
+          <button onclick="openCopyModal('Robert O.',31.8,'Gold & Indices','RO','#065f46')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
+        </div>
+      </div>
+      <!-- Active copy trades list -->
+      <div class="stat-card mt-6">
+        <div class="text-sm font-bold text-gray-700 mb-4">Your Active Copy Trades</div>
+        <div id="activeCopyTrades"><div class="text-center py-6 text-gray-400 text-sm">No active copy trades yet</div></div>
+      </div>
+    </div>
+
+    <!-- ══ COPY TRADE MODAL ══ -->
+    <div id="copyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div class="absolute inset-0 bg-black/60" onclick="closeCopyModal()"></div>
+      <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 z-10">
+        <div class="flex items-center gap-3 mb-5">
+          <div id="modalAvatar" class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"></div>
+          <div>
+            <div id="modalName" class="font-black text-gray-900 text-lg"></div>
+            <div id="modalSpecialty" class="text-xs text-gray-500"></div>
+          </div>
+          <button onclick="closeCopyModal()" class="ml-auto text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="bg-gray-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-gray-500">ROI</div>
+            <div id="modalRoi" class="font-black text-green-600 text-lg"></div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-gray-500">Duration</div>
+            <div class="font-black text-gray-900 text-lg">5 days</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-gray-500">Balance</div>
+            <div id="modalBalance" class="font-black text-gray-900 text-sm"></div>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Amount to Allocate (USD)</label>
+          <input type="number" id="copyAmount" class="input-field" placeholder="Enter amount e.g. 200" min="10" oninput="updateCopyPreview()" />
+          <div class="text-xs text-gray-400 mt-1">Min: $10 · Max: <span id="modalMaxAmount">$0</span></div>
+        </div>
+        <div id="copyPreview" class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+          <div class="text-xs font-bold text-blue-800 mb-3">📊 Trade Summary</div>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Amount allocating</span><span class="font-bold text-gray-900" id="previewAmount">$0</span></div>
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Expected ROI (<span id="previewRoiPct"></span>%)</span><span class="font-bold text-green-600" id="previewEarnings">+$0</span></div>
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Duration</span><span class="font-bold text-gray-900">5 days</span></div>
+            <div class="border-t border-blue-200 pt-2 flex justify-between text-sm">
+              <span class="font-bold text-gray-700">Total return after 5 days</span>
+              <span class="font-black text-green-700" id="previewTotal">$0</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+          <div class="text-xs text-yellow-800 leading-relaxed">⚠️ The allocated amount will be <strong>deducted from your balance immediately</strong>. Your returns will be credited after 5 days upon admin approval.</div>
+        </div>
+        <div id="copyModalErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4"></div>
+        <div class="flex gap-3">
+          <button onclick="confirmCopyTrade()" class="btn-primary flex-1 py-3 rounded-xl font-semibold text-sm">Confirm & Copy</button>
+          <button onclick="closeCopyModal()" class="btn-outline flex-1 py-3 rounded-xl font-semibold text-sm">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div class="section" id="sec-settings">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Account Settings</h2>
+        <p class="text-gray-500 text-sm mt-1">Update your personal information and password.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="stat-card">
+          <div class="text-sm font-bold text-gray-700 mb-4">Personal Information</div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Full Name</label>
+              <input type="text" id="settingsName" class="input-field" placeholder="Your full name" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Email</label>
+              <input type="email" id="settingsEmail" class="input-field" disabled style="background:#f9fafb;color:#6b7280" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Phone</label>
+              <input type="tel" id="settingsPhone" class="input-field" placeholder="Your phone number" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Country</label>
+              <select id="settingsCountry" class="input-field">
+                <option value="">Select country</option>
+                <option>United States</option><option>United Kingdom</option>
+                <option>Nigeria</option><option>Canada</option>
+                <option>Australia</option><option>Germany</option>
+                <option>France</option><option>South Africa</option>
+                <option>India</option><option>UAE</option><option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div id="profileMsg" class="hidden mt-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm"></div>
+          <button onclick="updateProfile()" class="btn-primary w-full py-3 rounded-xl font-semibold mt-5">Save Changes</button>
+        </div>
+
+        <div class="stat-card">
+          <div class="text-sm font-bold text-gray-700 mb-4">Change Password</div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Current Password</label>
+              <input type="password" id="currentPwd" class="input-field" placeholder="••••••••" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">New Password</label>
+              <input type="password" id="newPwd" class="input-field" placeholder="Min. 8 characters" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-2">Confirm New Password</label>
+              <input type="password" id="confirmPwd" class="input-field" placeholder="Re-enter new password" />
+            </div>
+          </div>
+          <div id="pwdMsg" class="hidden mt-4 rounded-xl px-4 py-3 text-sm"></div>
+          <button onclick="changePassword()" class="btn-primary w-full py-3 rounded-xl font-semibold mt-5">Update Password</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FIREBASE + LOGIC
+══════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrwqA-_CK-22E7PsNlSAIw-bXWN6Dl-mU",
+    authDomain: "apexmarketgrowth.firebaseapp.com",
+    projectId: "apexmarketgrowth",
+    storageBucket: "apexmarketgrowth.firebasestorage.app",
+    messagingSenderId: "81223871224",
+    appId: "1:81223871224:web:1cf05fadc6e24f90aee90d"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let currentUser = null;
+  let userData    = null;
+
+  // ── Wallet addresses — REPLACE WITH YOUR REAL ADDRESSES ──
+  const wallets = {
+    BTC:  'YOUR_BTC_WALLET_ADDRESS_HERE',
+    ETH:  'YOUR_ETH_WALLET_ADDRESS_HERE',
+    USDT: 'YOUR_USDT_WALLET_ADDRESS_HERE',
+    BNB:  'YOUR_BNB_WALLET_ADDRESS_HERE',
+    LTC:  'YOUR_LTC_WALLET_ADDRESS_HERE',
+  };
+
+  const cryptoNames = {
+    BTC: 'Bitcoin (BTC)', ETH: 'Ethereum (ETH)',
+    USDT: 'Tether (USDT)', BNB: 'BNB Chain (BNB)', LTC: 'Litecoin (LTC)'
+  };
+
+  // Investment plans
+  const plans = [
+    { id:'elite1', name:'ELITE 1', roi:10.5, days:7, min:0, assets:'XAUUSD' },
+    { id:'silver', name:'Silver',  roi:15.25, days:5, min:0, assets:'XAUUSD, ETHUSD, GBPUSD' },
+    { id:'bronze', name:'Bronze',  roi:12.0, days:7, min:1000, assets:'Stocks, Forex' },
+    { id:'gold',   name:'Gold',    roi:28.25, days:21, min:25000, assets:'Crypto, Oil, Gold' },
+    { id:'pro4',   name:'Pro IV',  roi:35.0, days:30, min:100000, assets:'Diversified Portfolio' },
+  ];
+
+  let selectedPlan = null;
+  let selectedCrypto = 'BTC';
+  let allTransactions = [];
+
+  // ── Auth guard ──
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    currentUser = user;
+    await loadUserData();
+    loadPlans();
+    loadTransactions();
+    loadNotifications();
+    loadMyInvestments();
+    setDate();
+  });
+
+  async function loadUserData() {
+    const snap = await getDoc(doc(db, 'users', currentUser.uid));
+    if (snap.exists()) {
+      userData = snap.data();
+      // Update UI
+      const name  = userData.fullName || 'User';
+      const email = userData.email || '';
+      const bal   = '$' + (userData.balance || 0).toLocaleString('en-US', {minimumFractionDigits:2});
+      document.getElementById('sidebarName').textContent = name;
+      document.getElementById('sidebarEmail').textContent = email;
+      document.getElementById('sidebarBalance').textContent = bal;
+      document.getElementById('topbarBalance').textContent = bal;
+      document.getElementById('welcomeName').textContent = name.split(' ')[0];
+      document.getElementById('statBalance').textContent = bal;
+      document.getElementById('statDeposits').textContent = '$' + (userData.totalDeposits||0).toLocaleString('en-US',{minimumFractionDigits:2});
+      document.getElementById('statEarnings').textContent = '$' + (userData.totalEarnings||0).toLocaleString('en-US',{minimumFractionDigits:2});
+      document.getElementById('statWithdrawals').textContent = '$' + (userData.totalWithdrawals||0).toLocaleString('en-US',{minimumFractionDigits:2});
+      document.getElementById('withdrawBalance').textContent = bal;
+      const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      document.getElementById('avatarCircle').textContent = initials;
+      document.getElementById('topbarAvatar').textContent = initials;
+      // Settings
+      document.getElementById('settingsName').value    = userData.fullName || '';
+      document.getElementById('settingsEmail').value   = userData.email || '';
+      document.getElementById('settingsPhone').value   = userData.phone || '';
+      document.getElementById('settingsCountry').value = userData.country || '';
+    }
+  }
+
+  function loadPlans() {
+    const grid = document.getElementById('plansGrid');
+    grid.innerHTML = '';
+    plans.forEach(plan => {
+      const card = document.createElement('div');
+      card.className = 'plan-card bg-white';
+      card.id = 'plan-' + plan.id;
+      card.innerHTML = `
+        <div class="bg-gradient-to-b from-gray-50 to-gray-100 px-5 py-4 flex items-center justify-between">
+          <div class="font-bold text-gray-900">${plan.name}</div>
+          <div class="text-xs px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600 font-semibold">${plan.days} days</div>
+        </div>
+        <div class="p-5">
+          <div class="flex items-end justify-between mb-3">
+            <div>
+              <div class="text-xs text-gray-500 font-semibold">ROI</div>
+              <div class="text-3xl font-black" style="color:var(--maroon)">${plan.roi}%</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-gray-500 font-semibold">Min Deposit</div>
+              <div class="text-lg font-extrabold text-gray-900">${plan.min === 0 ? 'None' : '$'+plan.min.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="text-xs text-gray-500 mb-4">Assets: ${plan.assets}</div>
+          <button onclick="selectPlan('${plan.id}')" class="btn-primary w-full py-3 rounded-xl font-semibold text-sm">
+            Select Plan
+          </button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  async function loadTransactions() {
+    try {
+      allTransactions = [];
+
+      // Deposits
+      const snap1 = await getDocs(query(collection(db,'deposits'), where('userId','==',currentUser.uid)));
+      snap1.forEach(d => allTransactions.push({...d.data(), id:d.id, type:'deposit'}));
+
+      // Withdrawals
+      const snap2 = await getDocs(query(collection(db,'withdrawals'), where('userId','==',currentUser.uid)));
+      snap2.forEach(d => allTransactions.push({...d.data(), id:d.id, type:'withdrawal'}));
+
+      // Copy trades
+      const snap3 = await getDocs(query(collection(db,'copytrading'), where('userId','==',currentUser.uid)));
+      snap3.forEach(d => allTransactions.push({...d.data(), id:d.id, type:'copytrade'}));
+
+      // Investments
+      const snap4 = await getDocs(query(collection(db,'transactions'), where('userId','==',currentUser.uid)));
+      snap4.forEach(d => { if(!allTransactions.find(t=>t.id===d.id)) allTransactions.push({...d.data(), id:d.id}); });
+
+      allTransactions.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+      renderTransactions('all');
+      renderRecentTx();
+      loadActiveCopyTrades();
+    } catch(e) { console.error(e); }
+  }
+
+  // ══════════════════════════════════════════════════
+  //  INVESTMENT AUTO-EARNING ENGINE
+  //  Runs every time dashboard loads. Calculates how
+  //  many full days have passed since last credit and
+  //  pays out daily earnings automatically — capped at
+  //  the plan's total ROI. No admin action needed.
+  // ══════════════════════════════════════════════════
+  async function loadMyInvestments() {
+    try {
+      const q    = query(collection(db,'investments'), where('userId','==',currentUser.uid));
+      const snap = await getDocs(q);
+      const investments = [];
+      snap.forEach(d => investments.push({...d.data(), id:d.id}));
+
+      let totalEarningsDelta = 0;
+
+      // Process each active investment for auto-crediting
+      for (const inv of investments) {
+        if (inv.status !== 'active') continue;
+
+        const now          = new Date();
+        const lastCredit    = new Date(inv.lastCreditDate || inv.startDate);
+        const end           = new Date(inv.endDate);
+        const msPerDay       = 24*60*60*1000;
+
+        // How many full days have elapsed since last credit
+        let daysPassed = Math.floor((now - lastCredit) / msPerDay);
+        if (daysPassed < 1) continue; // nothing to credit yet
+
+        // Cap days passed so we never exceed plan duration
+        const totalDaysElapsedSinceStart = Math.floor((now - new Date(inv.startDate)) / msPerDay);
+        const remainingDays = inv.days - Math.floor((lastCredit - new Date(inv.startDate)) / msPerDay);
+        daysPassed = Math.min(daysPassed, Math.max(remainingDays,0));
+        if (daysPassed <= 0) continue;
+
+        const creditAmount = parseFloat((inv.dailyEarning * daysPassed).toFixed(2));
+        let newEarnedSoFar = parseFloat((inv.earnedSoFar + creditAmount).toFixed(2));
+
+        // Cap at total plan earnings (so it lands exactly on ROI by day N)
+        let isComplete = false;
+        if (newEarnedSoFar >= inv.totalEarnings || now >= end) {
+          newEarnedSoFar = inv.totalEarnings;
+          isComplete = true;
+        }
+
+        const actualCredit = parseFloat((newEarnedSoFar - inv.earnedSoFar).toFixed(2));
+        if (actualCredit <= 0 && !isComplete) continue;
+
+        // Update investment record
+        await updateDoc(doc(db,'investments',inv.id), {
+          earnedSoFar: newEarnedSoFar,
+          lastCreditDate: now.toISOString(),
+          status: isComplete ? 'completed' : 'active'
+        });
+
+        totalEarningsDelta += actualCredit;
+        inv.earnedSoFar = newEarnedSoFar;
+        inv.status = isComplete ? 'completed' : 'active';
+
+        if (isComplete) {
+          await sendNotification(currentUser.uid, 'investment',
+            'Investment Plan Completed 🎉',
+            `Your ${inv.planName} plan has completed its ${inv.days}-day cycle! Total ROI of $${inv.totalEarnings.toLocaleString()} has been fully credited. You can reactivate or choose a new plan anytime.`
+          );
+        }
+      }
+
+      // ── Auto-transfer accumulated earnings into balance + totalEarnings ──
+      // (No admin approval needed for earnings — only withdrawals need approval)
+      if (totalEarningsDelta > 0) {
+        const userSnap = await getDoc(doc(db,'users',currentUser.uid));
+        const ud = userSnap.data();
+        const newBalance = parseFloat(((ud.balance||0) + totalEarningsDelta).toFixed(2));
+        const newTotalEarnings = parseFloat(((ud.totalEarnings||0) + totalEarningsDelta).toFixed(2));
+        await updateDoc(doc(db,'users',currentUser.uid), {
+          balance: newBalance,
+          totalEarnings: newTotalEarnings
+        });
+        await sendNotification(currentUser.uid, 'investment',
+          'Daily Earnings Credited 💵',
+          `$${totalEarningsDelta.toLocaleString()} in investment earnings has been automatically added to your balance.`
+        );
+        await loadUserData();
+      }
+
+      renderMyInvestments(investments);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderMyInvestments(investments) {
+    const body = document.getElementById('myInvestmentsBody');
+
+    // Update Overview "Active Plan" summary box
+    const activeOnes = investments.filter(i => i.status === 'active');
+    const overviewBox = document.getElementById('activePlanBox');
+    if (overviewBox) {
+      if (activeOnes.length === 0) {
+        overviewBox.innerHTML = `
+          <div class="text-center py-6">
+            <div class="text-gray-400 text-sm">No active plan</div>
+            <button onclick="showSection('plans')" class="mt-3 btn-primary px-5 py-2 rounded-xl text-sm font-semibold">Browse Plans</button>
+          </div>`;
+      } else {
+        overviewBox.innerHTML = activeOnes.slice(0,2).map(inv => `
+          <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+            <div>
+              <div class="font-bold text-gray-900 text-sm">${inv.planName}</div>
+              <div class="text-xs text-gray-500 mt-0.5">${inv.roi}% ROI · earned $${Number(inv.earnedSoFar||0).toLocaleString('en-US',{minimumFractionDigits:2})}</div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full badge-active font-semibold">Active</span>
+          </div>
+        `).join('') + (activeOnes.length > 2 ? `<button onclick="showSection('plans')" class="text-xs font-semibold mt-2" style="color:var(--maroon)">View all ${activeOnes.length} →</button>` : '');
+      }
+    }
+
+    if (!investments.length) {
+      body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:#9ca3af;font-size:13px">No active investments yet</td></tr>';
+      return;
+    }
+    const sorted = [...investments].sort((a,b)=> new Date(b.startDate) - new Date(a.startDate));
+    body.innerHTML = sorted.map(inv => {
+      const start = new Date(inv.startDate);
+      const end   = new Date(inv.endDate);
+      const now   = new Date();
+      const totalMs   = end - start;
+      const elapsedMs = Math.min(Math.max(now - start, 0), totalMs);
+      const pct = totalMs > 0 ? Math.round((elapsedMs/totalMs)*100) : 100;
+      const statusBadge = inv.status === 'completed'
+        ? '<span class="badge badge-approved">Completed</span>'
+        : '<span class="badge badge-active">Active</span>';
+      return `
+        <tr>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9"><span class="font-bold">${inv.planName}</span></td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9">$${Number(inv.amount).toLocaleString()}</td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9" class="text-green-600 font-bold">${inv.roi}%</td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9">${inv.days} days</td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9" class="text-xs text-gray-400">${start.toLocaleDateString()}</td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9">
+            <div style="width:80px;background:#e5e7eb;border-radius:999px;height:6px;overflow:hidden">
+              <div style="width:${pct}%;background:var(--maroon);height:100%"></div>
+            </div>
+            <span class="text-xs text-gray-400">${pct}%</span>
+          </td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9" class="text-green-600 font-bold">+$${Number(inv.earnedSoFar||0).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+          <td style="padding:14px 16px;font-size:13px;border-bottom:1px solid #f1f5f9">
+            ${statusBadge}
+            ${inv.status==='completed' ? `<button onclick="selectPlan('${inv.planId}')" class="block mt-1 text-xs font-semibold" style="color:var(--maroon)">Reactivate</button>` : ''}
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderTransactions(filter) {
+    const list = document.getElementById('txList');
+    const filtered = filter === 'all' ? allTransactions : allTransactions.filter(t => t.type === filter);
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="text-center py-12 text-gray-400 text-sm">No transactions found</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(tx => {
+      const bgColor = tx.type==='deposit'?'#065f46':tx.type==='withdrawal'?'#7c2d12':tx.type==='copytrade'?'#5b21b6':'#1e3a5f';
+      const icon    = tx.type==='deposit'?'↓':tx.type==='withdrawal'?'↑':tx.type==='copytrade'?'CT':'📈';
+      const label   = tx.type==='copytrade' ? 'Copy Trade · '+( tx.expert||'') : tx.type;
+      const sub     = tx.type==='copytrade' ? 'ROI '+tx.roi+'% · '+( tx.createdAt?new Date(tx.createdAt.seconds*1000).toLocaleDateString():'Active') : (tx.crypto||'') + ' · ' + (tx.createdAt?new Date(tx.createdAt.seconds*1000).toLocaleDateString():'Pending');
+      const badge   = tx.status||'pending';
+      return `
+      <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:${bgColor}">${icon}</div>
+          <div>
+            <div class="text-sm font-semibold text-gray-900 capitalize">${label}</div>
+            <div class="text-xs text-gray-400">${sub}</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold text-gray-900">$${Number(tx.amount||0).toLocaleString()}</div>
+          <span class="text-xs px-2 py-0.5 rounded-full font-semibold badge-${badge}">${badge}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderRecentTx() {
+    const el = document.getElementById('recentTxList');
+    const recent = allTransactions.slice(0, 4);
+    if (recent.length === 0) { el.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">No transactions yet</div>'; return; }
+    el.innerHTML = recent.map(tx => `
+      <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold"
+               style="background:${tx.type==='deposit'?'#065f46':'#7c2d12'}">
+            ${tx.type==='deposit'?'↓':'↑'}
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-gray-900 capitalize">${tx.type}</div>
+            <div class="text-xs text-gray-400">${tx.crypto||''}</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold text-gray-900">$${Number(tx.amount||0).toLocaleString()}</div>
+          <span class="text-xs px-2 py-0.5 rounded-full font-semibold badge-${tx.status||'pending'}">${tx.status||'pending'}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function setDate() {
+    document.getElementById('pageDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+
+  // ── Crypto select ──
+  window.selectCrypto = function(coin, btn) {
+    selectedCrypto = coin;
+    document.querySelectorAll('.crypto-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('walletAddress').textContent = wallets[coin];
+    document.getElementById('qrCryptoName').textContent = cryptoNames[coin];
+    document.getElementById('qrCryptoShort').textContent = coin;
+    document.getElementById('qrImage').src = `assets/qr/${coin.toLowerCase()}-qr.jpeg`;
+  }
+
+  // Init BTC
+  document.getElementById('walletAddress').textContent = wallets['BTC'];
+
+  // ── Copy wallet ──
+  window.copyWallet = function() {
+    navigator.clipboard.writeText(wallets[selectedCrypto]);
+    document.getElementById('copyWalletBtn').textContent = 'Copied!';
+    setTimeout(() => document.getElementById('copyWalletBtn').textContent = 'Copy', 2000);
+  }
+
+  // ── Proof upload ──
+  window.handleProofUpload = function(input) {
+    if (input.files[0]) {
+      document.getElementById('proofLabel').textContent = '✓ ' + input.files[0].name;
+    }
+  }
+
+  // ── Submit deposit ──
+  window.submitDeposit = async function() {
+    const amount = document.getElementById('depositAmount').value;
+    const file   = document.getElementById('proofFile').files[0];
+    const errEl  = document.getElementById('depositErr');
+    const sucEl  = document.getElementById('depositSuccess');
+    errEl.classList.add('hidden');
+    sucEl.classList.add('hidden');
+
+    if (!amount || Number(amount) < 10) { errEl.textContent = 'Minimum deposit is $10.'; errEl.classList.remove('hidden'); return; }
+    if (!file) { errEl.textContent = 'Please upload your payment proof screenshot.'; errEl.classList.remove('hidden'); return; }
+
+    try {
+      await addDoc(collection(db, 'deposits'), {
+        userId:    currentUser.uid,
+        userEmail: currentUser.email,
+        userName:  userData?.fullName || '',
+        crypto:    selectedCrypto,
+        wallet:    wallets[selectedCrypto],
+        amount:    Number(amount),
+        status:    'pending',
+        proofName: file.name,
+        createdAt: serverTimestamp()
+      });
+      sucEl.textContent = 'Deposit submitted! It will be reviewed and approved within 24 hours.';
+      sucEl.classList.remove('hidden');
+      document.getElementById('depositAmount').value = '';
+      document.getElementById('proofLabel').textContent = 'Click to upload screenshot';
+      document.getElementById('proofFile').value = '';
+      await sendNotification(currentUser.uid, 'deposit',
+        'Deposit Received 💰',
+        `Your deposit of $${Number(amount).toLocaleString()} via ${selectedCrypto} has been submitted and is pending approval. You will be notified once it is confirmed.`
+      );
+      loadTransactions();
+      loadNotifications();
+    } catch(e) {
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Submit withdrawal ──
+  window.submitWithdrawal = async function() {
+    const amount = document.getElementById('withdrawAmount').value;
+    const crypto = document.getElementById('withdrawCrypto').value;
+    const wallet = document.getElementById('withdrawWallet').value.trim();
+    const notes  = document.getElementById('withdrawNotes').value.trim();
+    const errEl  = document.getElementById('withdrawErr');
+    const sucEl  = document.getElementById('withdrawSuccess');
+    errEl.classList.add('hidden');
+    sucEl.classList.add('hidden');
+
+    if (!amount || Number(amount) < 50) { errEl.textContent = 'Minimum withdrawal is $50.'; errEl.classList.remove('hidden'); return; }
+    if (Number(amount) > (userData?.balance||0)) { errEl.textContent = 'Insufficient balance.'; errEl.classList.remove('hidden'); return; }
+    if (!crypto) { errEl.textContent = 'Please select a cryptocurrency.'; errEl.classList.remove('hidden'); return; }
+    if (!wallet) { errEl.textContent = 'Please enter your wallet address.'; errEl.classList.remove('hidden'); return; }
+
+    try {
+      await addDoc(collection(db, 'withdrawals'), {
+        userId:    currentUser.uid,
+        userEmail: currentUser.email,
+        userName:  userData?.fullName || '',
+        amount:    Number(amount),
+        crypto:    crypto,
+        wallet:    wallet,
+        notes:     notes,
+        status:    'pending',
+        createdAt: serverTimestamp()
+      });
+      sucEl.textContent = 'Withdrawal request submitted! Processing within 24–48 hours.';
+      sucEl.classList.remove('hidden');
+      document.getElementById('withdrawAmount').value = '';
+      document.getElementById('withdrawWallet').value = '';
+      document.getElementById('withdrawNotes').value = '';
+      await sendNotification(currentUser.uid, 'withdrawal',
+        'Withdrawal Request Submitted 💸',
+        `Your withdrawal request of $${Number(amount).toLocaleString()} via ${crypto} has been submitted. It will be processed within 24–48 hours after admin review.`
+      );
+      loadTransactions();
+      loadNotifications();
+    } catch(e) {
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Select plan ──
+  window.selectPlan = function(planId) {
+    selectedPlan = plans.find(p => p.id === planId);
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('plan-' + planId).classList.add('selected');
+    const panel = document.getElementById('investPanel');
+    panel.classList.remove('hidden');
+    const balance = userData?.balance || 0;
+    document.getElementById('investSummary').innerHTML = `
+      <div class="space-y-2 mb-4">
+        <div class="flex justify-between"><span class="text-gray-500">Plan</span><span class="font-bold">${selectedPlan.name}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">ROI (total over ${selectedPlan.days} days)</span><span class="font-bold text-green-600">${selectedPlan.roi}%</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Duration</span><span class="font-bold">${selectedPlan.days} days</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Min Deposit</span><span class="font-bold">${selectedPlan.min === 0 ? 'None' : '$'+selectedPlan.min.toLocaleString()}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Your Balance</span><span class="font-bold">$${balance.toLocaleString()}</span></div>
+      </div>
+      <label class="block text-xs font-semibold text-gray-600 mb-2">Amount to Invest (USD)</label>
+      <input type="number" id="investAmountInput" class="input-field w-full" placeholder="Enter amount" min="${selectedPlan.min||10}" oninput="updateInvestPreview()" />
+      <div id="investPreviewBox" class="hidden mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm">
+        <div class="flex justify-between"><span class="text-gray-600">Daily earning</span><span class="font-bold text-blue-700" id="dailyEarnPreview">$0</span></div>
+        <div class="flex justify-between mt-1"><span class="text-gray-600">Total earnings (${selectedPlan.days} days)</span><span class="font-bold text-green-600" id="totalEarnPreview">$0</span></div>
+        <div class="flex justify-between mt-1 pt-1 border-t border-blue-200"><span class="text-gray-700 font-semibold">Total return</span><span class="font-black text-green-700" id="totalReturnPreview">$0</span></div>
+      </div>
+    `;
+  }
+
+  window.updateInvestPreview = function() {
+    const amount = parseFloat(document.getElementById('investAmountInput').value) || 0;
+    const box = document.getElementById('investPreviewBox');
+    if (!selectedPlan || amount <= 0) { box.classList.add('hidden'); return; }
+    const totalEarnings = amount * (selectedPlan.roi / 100);
+    const dailyEarning  = totalEarnings / selectedPlan.days;
+    document.getElementById('dailyEarnPreview').textContent  = '$' + dailyEarning.toLocaleString('en-US',{minimumFractionDigits:2});
+    document.getElementById('totalEarnPreview').textContent  = '+$' + totalEarnings.toLocaleString('en-US',{minimumFractionDigits:2});
+    document.getElementById('totalReturnPreview').textContent= '$' + (amount+totalEarnings).toLocaleString('en-US',{minimumFractionDigits:2});
+    box.classList.remove('hidden');
+  }
+
+  // ── Confirm invest ──
+  window.confirmInvest = async function() {
+    const errEl = document.getElementById('investErr');
+    const sucEl = document.getElementById('investSuccess');
+    errEl.classList.add('hidden'); sucEl.classList.add('hidden');
+
+    if (!selectedPlan) return;
+    const amount  = parseFloat(document.getElementById('investAmountInput')?.value);
+    const balance = userData?.balance || 0;
+
+    if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.classList.remove('hidden'); return; }
+    if (amount < selectedPlan.min) { errEl.textContent = `Minimum investment for this plan is $${selectedPlan.min.toLocaleString()}.`; errEl.classList.remove('hidden'); return; }
+    if (amount > balance) { errEl.textContent = 'Insufficient balance.'; errEl.classList.remove('hidden'); return; }
+
+    try {
+      const totalEarnings = parseFloat((amount * (selectedPlan.roi/100)).toFixed(2));
+      const dailyEarning  = parseFloat((totalEarnings / selectedPlan.days).toFixed(4));
+      const startDate     = new Date();
+      const endDate       = new Date(Date.now() + selectedPlan.days*24*60*60*1000);
+
+      // 1. Create investment record
+      const invRef = await addDoc(collection(db,'investments'), {
+        userId:        currentUser.uid,
+        userEmail:     currentUser.email,
+        userName:      userData?.fullName || '',
+        planId:        selectedPlan.id,
+        planName:      selectedPlan.name,
+        amount:        amount,
+        roi:           selectedPlan.roi,
+        days:          selectedPlan.days,
+        dailyEarning:  dailyEarning,
+        totalEarnings: totalEarnings,
+        earnedSoFar:   0,
+        startDate:     startDate.toISOString(),
+        endDate:       endDate.toISOString(),
+        lastCreditDate: startDate.toISOString(),
+        status:        'active',
+        createdAt:     serverTimestamp()
+      });
+
+      // 2. Deduct amount from balance immediately
+      const newBalance = parseFloat((balance - amount).toFixed(2));
+      await updateDoc(doc(db,'users',currentUser.uid), { balance: newBalance });
+
+      // 3. Log transaction
+      await addDoc(collection(db,'transactions'), {
+        userId: currentUser.uid, userEmail: currentUser.email,
+        type: 'investment', planName: selectedPlan.name, amount: amount,
+        status: 'active', createdAt: serverTimestamp()
+      });
+
+      sucEl.textContent = `Investment activated! $${amount.toLocaleString()} deducted from balance. Earnings will accrue daily.`;
+      sucEl.classList.remove('hidden');
+      await sendNotification(currentUser.uid, 'investment',
+        'Investment Plan Activated 📈',
+        `Your ${selectedPlan.name} plan is now active! $${amount.toLocaleString()} invested. Expected total ROI: ${selectedPlan.roi}% ($${totalEarnings.toLocaleString()}) over ${selectedPlan.days} days, credited daily to your earnings.`
+      );
+      await loadUserData();
+      await loadMyInvestments();
+      loadTransactions();
+      loadNotifications();
+      document.getElementById('investAmountInput').value = '';
+      document.getElementById('investPreviewBox').classList.add('hidden');
+    } catch(e) {
+      console.error(e);
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Copy trading modal ──
+  let copyModalData = {};
+
+  window.openCopyModal = function(name, roi, specialty, initials, color) {
+    copyModalData = { name, roi, specialty, initials, color };
+    const bal = userData?.balance || 0;
+    document.getElementById('modalAvatar').textContent = initials;
+    document.getElementById('modalAvatar').style.background = color;
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalSpecialty').textContent = specialty;
+    document.getElementById('modalRoi').textContent = '+' + roi + '%';
+    document.getElementById('modalBalance').textContent = '$' + bal.toLocaleString();
+    document.getElementById('modalMaxAmount').textContent = '$' + bal.toLocaleString();
+    document.getElementById('copyAmount').value = '';
+    document.getElementById('copyAmount').max = bal;
+    document.getElementById('copyPreview').classList.add('hidden');
+    document.getElementById('copyModalErr').classList.add('hidden');
+    document.getElementById('copyModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  window.closeCopyModal = function() {
+    document.getElementById('copyModal').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  window.updateCopyPreview = function() {
+    const amount = parseFloat(document.getElementById('copyAmount').value) || 0;
+    const roi    = copyModalData.roi || 0;
+    if (amount < 10) { document.getElementById('copyPreview').classList.add('hidden'); return; }
+    const earnings = (amount * roi / 100);
+    const total    = amount + earnings;
+    document.getElementById('previewAmount').textContent   = '$' + amount.toLocaleString('en-US',{minimumFractionDigits:2});
+    document.getElementById('previewRoiPct').textContent   = roi;
+    document.getElementById('previewEarnings').textContent = '+$' + earnings.toLocaleString('en-US',{minimumFractionDigits:2});
+    document.getElementById('previewTotal').textContent    = '$' + total.toLocaleString('en-US',{minimumFractionDigits:2});
+    document.getElementById('copyPreview').classList.remove('hidden');
+  }
+
+  window.confirmCopyTrade = async function() {
+    const amount  = parseFloat(document.getElementById('copyAmount').value);
+    const balance = userData?.balance || 0;
+    const errEl   = document.getElementById('copyModalErr');
+    errEl.classList.add('hidden');
+
+    if (!amount || amount < 10) { errEl.textContent = 'Minimum amount is $10.'; errEl.classList.remove('hidden'); return; }
+    if (amount > balance) { errEl.textContent = 'Insufficient balance.'; errEl.classList.remove('hidden'); return; }
+
+    const { name, roi, specialty } = copyModalData;
+    const earnings  = parseFloat((amount * roi / 100).toFixed(2));
+    const endDate   = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+
+    try {
+      // Save copy trade to Firestore
+      await addDoc(collection(db, 'copytrading'), {
+        userId:    currentUser.uid,
+        userEmail: currentUser.email,
+        userName:  userData?.fullName || '',
+        expert:    name,
+        specialty: specialty,
+        roi:       roi,
+        amount:    amount,
+        earnings:  earnings,
+        totalReturn: amount + earnings,
+        duration:  5,
+        endDate:   endDate.toISOString(),
+        status:    'active',
+        createdAt: serverTimestamp()
+      });
+
+      // Save to transactions collection
+      await addDoc(collection(db, 'transactions'), {
+        userId:    currentUser.uid,
+        userEmail: currentUser.email,
+        type:      'copytrade',
+        expert:    name,
+        amount:    amount,
+        earnings:  earnings,
+        roi:       roi,
+        status:    'active',
+        createdAt: serverTimestamp()
+      });
+
+      // Deduct from balance
+      const newBalance = parseFloat((balance - amount).toFixed(2));
+      await updateDoc(doc(db, 'users', currentUser.uid), { balance: newBalance });
+      userData.balance = newBalance;
+
+      closeCopyModal();
+      await loadUserData();
+      await loadTransactions();
+      loadActiveCopyTrades();
+
+      // Show success message
+      const msg = document.createElement('div');
+      msg.className = 'fixed top-6 right-6 bg-green-600 text-white px-5 py-4 rounded-2xl shadow-lg z-50 text-sm font-semibold';
+      msg.textContent = `✓ Now copying ${name}! $${amount.toLocaleString()} allocated.`;
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 4000);
+
+    } catch(e) {
+      console.error(e);
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  // Load active copy trades
+  async function loadActiveCopyTrades() {
+    try {
+      const q = query(collection(db, 'copytrading'), where('userId','==',currentUser.uid), where('status','==','active'));
+      const snap = await getDocs(q);
+      const el = document.getElementById('activeCopyTrades');
+      if (snap.empty) { el.innerHTML = '<div class="text-center py-6 text-gray-400 text-sm">No active copy trades yet</div>'; return; }
+      el.innerHTML = '';
+      snap.forEach(d => {
+        const t = d.data();
+        const end = t.endDate ? new Date(t.endDate).toLocaleDateString() : 'N/A';
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between py-3 border-b border-gray-100 last:border-0';
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:var(--maroon)">CT</div>
+            <div>
+              <div class="text-sm font-semibold text-gray-900">Copying ${t.expert}</div>
+              <div class="text-xs text-gray-400">Ends ${end} · ROI ${t.roi}%</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-bold text-gray-900">$${Number(t.amount).toLocaleString()}</div>
+            <div class="text-xs text-green-600 font-semibold">+$${Number(t.earnings).toLocaleString()} est.</div>
+          </div>
+        `;
+        el.appendChild(div);
+      });
+    } catch(e) { console.error(e); }
+  }
+
+  // ── Filter transactions ──
+  window.filterTx = function(filter, btn) {
+    document.querySelectorAll('#sec-history .crypto-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTransactions(filter);
+  }
+
+  // ── Update profile ──
+  window.updateProfile = async function() {
+    const name    = document.getElementById('settingsName').value.trim();
+    const phone   = document.getElementById('settingsPhone').value.trim();
+    const country = document.getElementById('settingsCountry').value;
+    const msgEl   = document.getElementById('profileMsg');
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { fullName:name, phone, country });
+      msgEl.textContent = 'Profile updated successfully!';
+      msgEl.classList.remove('hidden');
+      setTimeout(() => msgEl.classList.add('hidden'), 3000);
+      await loadUserData();
+    } catch(e) {
+      msgEl.textContent = 'Failed to update. Please try again.';
+      msgEl.className = 'mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm';
+      msgEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Change password ──
+  window.changePassword = async function() {
+    const current = document.getElementById('currentPwd').value;
+    const newP    = document.getElementById('newPwd').value;
+    const confirm = document.getElementById('confirmPwd').value;
+    const msgEl   = document.getElementById('pwdMsg');
+
+    if (newP.length < 8) { msgEl.textContent='Password must be at least 8 characters.'; msgEl.className='mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm'; msgEl.classList.remove('hidden'); return; }
+    if (newP !== confirm) { msgEl.textContent='Passwords do not match.'; msgEl.className='mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm'; msgEl.classList.remove('hidden'); return; }
+
+    try {
+      const cred = EmailAuthProvider.credential(currentUser.email, current);
+      await reauthenticateWithCredential(currentUser, cred);
+      await updatePassword(currentUser, newP);
+      msgEl.textContent = 'Password updated successfully!';
+      msgEl.className = 'mt-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm';
+      msgEl.classList.remove('hidden');
+      document.getElementById('currentPwd').value = '';
+      document.getElementById('newPwd').value = '';
+      document.getElementById('confirmPwd').value = '';
+    } catch(e) {
+      msgEl.textContent = 'Current password is incorrect.';
+      msgEl.className = 'mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm';
+      msgEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Notifications ──
+  async function loadNotifications() {
+    try {
+      const q    = query(collection(db,'notifications'), where('userId','==',currentUser.uid));
+      const snap = await getDocs(q);
+      const notifs = [];
+      snap.forEach(d => notifs.push({...d.data(), id:d.id}));
+      notifs.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+      const unread = notifs.filter(n => !n.read).length;
+      const badge  = document.getElementById('notifBadge');
+      if (unread > 0) { badge.textContent = unread; badge.classList.remove('hidden'); }
+      else { badge.classList.add('hidden'); }
+      const list = document.getElementById('notifList');
+      if (notifs.length === 0) { list.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">No notifications</div>'; return; }
+      list.innerHTML = notifs.map(n => `
+        <div class="p-4 border-b border-gray-100 last:border-0 ${n.read?'':'bg-blue-50'} cursor-pointer hover:bg-gray-50"
+             onclick="markRead('${n.id}', this)">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm
+              ${n.type==='welcome'?'bg-green-100':n.type==='deposit'?'bg-blue-100':n.type==='withdrawal'?'bg-yellow-100':n.type==='investment'?'bg-purple-100':'bg-gray-100'}">
+              ${n.type==='welcome'?'🎉':n.type==='deposit'?'💰':n.type==='withdrawal'?'💸':n.type==='investment'?'📈':'🔔'}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-gray-900">${n.title}</div>
+              <div class="text-xs text-gray-500 mt-0.5 leading-relaxed">${n.message}</div>
+              <div class="text-xs text-gray-400 mt-1">${n.createdAt?new Date(n.createdAt.seconds*1000).toLocaleDateString():''}</div>
+            </div>
+            ${!n.read?'<div class="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1"></div>':''}
+          </div>
+        </div>
+      `).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  window.toggleNotifications = function() {
+    const panel = document.getElementById('notifPanel');
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) loadNotifications();
+  }
+
+  window.markRead = async function(id, el) {
+    try {
+      const { updateDoc: upd, doc: d } = await import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js");
+      await upd(d(db,'notifications',id), { read: true });
+      el.classList.remove('bg-blue-50');
+      el.querySelector('.w-2.h-2')?.remove();
+      loadNotifications();
+    } catch(e) {}
+  }
+
+  window.markAllRead = async function() {
+    try {
+      const q    = query(collection(db,'notifications'), where('userId','==',currentUser.uid), where('read','==',false));
+      const snap = await getDocs(q);
+      const { updateDoc: upd, doc: d } = await import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js");
+      for (const docSnap of snap.docs) {
+        await upd(d(db,'notifications',docSnap.id), { read: true });
+      }
+      loadNotifications();
+    } catch(e) {}
+  }
+
+  // Send notification helper
+  async function sendNotification(userId, type, title, message) {
+    try {
+      await addDoc(collection(db,'notifications'), {
+        userId, type, title, message, read: false, createdAt: serverTimestamp()
+      });
+    } catch(e) { console.error(e); }
+  }
+
+  // ── Logout ──
+  window.handleLogout = async function() {
+    if (confirm('Are you sure you want to log out?')) {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    }
+  }
+</script>
+
+<script>
+  // ── Section navigation ──
+  window.showSection = function(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('sec-' + name).classList.add('active');
+    const titles = { overview:'Overview', deposit:'Deposit', withdraw:'Withdrawal', plans:'Select Plan', history:'Transaction History', copytrade:'Copy Trading', settings:'Settings' };
+    document.getElementById('pageTitle').textContent = titles[name] || name;
+    // Highlight nav
+    document.querySelectorAll('.nav-link').forEach(l => {
+      if (l.getAttribute('onclick')?.includes("'"+name+"'")) l.classList.add('active');
+    });
+    closeSidebar();
+  }
+
+  // ── Sidebar toggle ──
+  window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    if (window.innerWidth < 768) {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+    } else {
+      const main = document.getElementById('main');
+      sidebar.classList.toggle('closed');
+      main.classList.toggle('expanded');
+    }
+  }
+
+  window.closeSidebar = function() {
+    if (window.innerWidth < 768) {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('show');
+    }
+  }
+</script>
+
+</body>
+</html>

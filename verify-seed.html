@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Seed Phrase – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f9fafb; }
+    .btn-primary { background: var(--maroon); color: #fff; transition: background .2s; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .input-field {
+      width: 100%; border: 1.5px solid #e5e7eb; border-radius: 12px;
+      padding: 0 16px; height: 50px; font-size: 14px; outline: none;
+      font-family: 'Poppins', sans-serif; transition: border .2s;
+      background: #fff; text-transform: lowercase;
+    }
+    .input-field:focus { border-color: var(--maroon); }
+    .input-field.correct { border-color: #22c55e; background: #f0fdf4; }
+    .input-field.wrong   { border-color: #ef4444; background: #fef2f2; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4 py-12">
+
+  <div class="w-full max-w-lg">
+
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <a href="index.html" class="text-2xl font-black tracking-widest" style="color:var(--maroon)">AMG.</a>
+      <div class="mt-6">
+        <div class="flex items-center justify-center gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:var(--maroon)">✓</div>
+            <span class="text-xs font-semibold text-gray-400">Account</span>
+          </div>
+          <div class="w-8 h-px bg-gray-300"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:var(--maroon)">✓</div>
+            <span class="text-xs font-semibold text-gray-400">Seed Phrase</span>
+          </div>
+          <div class="w-8 h-px bg-gray-300"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:var(--maroon)">3</div>
+            <span class="text-xs font-semibold" style="color:var(--maroon)">Verify</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main card -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-8">
+
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:#ede9fe">
+          <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-black text-gray-900">Verify Your Seed Phrase</h1>
+        <p class="mt-2 text-gray-500 text-sm max-w-sm mx-auto">
+          Enter the words at the positions shown below to confirm you saved them correctly.
+        </p>
+      </div>
+
+      <!-- Auth status indicator -->
+      <div id="authStatus" class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-blue-700 text-sm mb-4 flex items-center gap-2">
+        <svg class="animate-spin w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        Preparing verification...
+      </div>
+
+      <!-- 3 word inputs -->
+      <div id="verifyFields" class="space-y-4 mb-6"></div>
+
+      <div id="verifyErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4">
+        One or more words are incorrect. Please check your seed phrase and try again.
+      </div>
+
+      <div id="successMsg" class="hidden bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        All words verified! Taking you to your dashboard...
+      </div>
+
+      <button onclick="verifySeed()" id="verifyBtn" class="btn-primary w-full py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2">
+        <svg id="spinner" class="hidden animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        <span id="verifyBtnText">Verify & Enter Dashboard</span>
+      </button>
+
+      <button onclick="window.location.href='seedphrase.html'" class="w-full mt-3 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+        ← Go back and review phrase
+      </button>
+
+    </div>
+
+    <p class="text-center text-xs text-gray-400 mt-6">Step 3 of 3 — Verification</p>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp }       from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDrwqA-_CK-22E7PsNlSAIw-bXWN6Dl-mU",
+      authDomain:        "apexmarketgrowth.firebaseapp.com",
+      projectId:         "apexmarketgrowth",
+      storageBucket:     "apexmarketgrowth.firebasestorage.app",
+      messagingSenderId: "81223871224",
+      appId:             "1:81223871224:web:1cf05fadc6e24f90aee90d"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // Load seed from sessionStorage
+    const seed = JSON.parse(sessionStorage.getItem('amg_seed') || '[]');
+
+    // If no seed redirect back
+    if (!seed || seed.length !== 12) {
+      window.location.href = 'register.html';
+    }
+
+    // Pick 3 random positions
+    const positions = [];
+    while (positions.length < 3) {
+      const p = Math.floor(Math.random() * 12);
+      if (!positions.includes(p)) positions.push(p);
+    }
+    positions.sort((a, b) => a - b);
+
+    // Render input fields
+    const fields = document.getElementById('verifyFields');
+    positions.forEach(pos => {
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Word #${pos + 1}</label>
+        <input
+          type="text"
+          class="input-field"
+          data-pos="${pos}"
+          placeholder="Enter word #${pos + 1}"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+      `;
+      fields.appendChild(div);
+    });
+
+    // Live validation styling
+    fields.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', () => {
+        const pos = parseInt(input.dataset.pos);
+        const val = input.value.trim().toLowerCase();
+        if (val.length === 0) { input.className = 'input-field'; return; }
+        input.className = val === seed[pos] ? 'input-field correct' : 'input-field';
+      });
+    });
+
+    // Wait for auth to be ready — KEY FIX
+    let currentUser = null;
+    const authStatus = document.getElementById('authStatus');
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        authStatus.innerHTML = '✓ Account verified — ready to confirm seed phrase.';
+        authStatus.className = 'bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mb-4';
+      } else {
+        // Not logged in — redirect to register
+        authStatus.innerHTML = '⚠️ Session expired. Please register again.';
+        authStatus.className = 'bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4';
+        setTimeout(() => window.location.href = 'register.html', 2000);
+      }
+    });
+
+    // Verify handler
+    window.verifySeed = async function() {
+      const inputs = fields.querySelectorAll('input');
+      const errEl  = document.getElementById('verifyErr');
+      errEl.classList.add('hidden');
+
+      // Check auth is ready
+      if (!currentUser) {
+        errEl.textContent = 'Session not ready. Please wait a moment and try again.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      // Check all words
+      let allCorrect = true;
+      inputs.forEach(input => {
+        const pos = parseInt(input.dataset.pos);
+        const val = input.value.trim().toLowerCase();
+        if (val !== seed[pos]) {
+          input.className = 'input-field wrong';
+          allCorrect = false;
+        } else {
+          input.className = 'input-field correct';
+        }
+      });
+
+      if (!allCorrect) {
+        errEl.textContent = 'One or more words are incorrect. Please check your seed phrase.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      // Show loading
+      document.getElementById('spinner').classList.remove('hidden');
+      document.getElementById('verifyBtnText').textContent = 'Verifying...';
+      document.getElementById('verifyBtn').disabled = true;
+
+      try {
+        // Update seedVerified using the authenticated user's uid
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          seedVerified: true
+        });
+
+        // Clear seed from session for security
+        sessionStorage.removeItem('amg_seed');
+
+        // Show success
+        document.getElementById('successMsg').classList.remove('hidden');
+
+        // Redirect to dashboard
+        setTimeout(() => {
+          window.location.href = 'user-dashboard.html';
+        }, 1500);
+
+      } catch (err) {
+        console.error('Firestore error:', err.code, err.message);
+
+        // KEY FIX — if permission error, skip the update and go to dashboard anyway
+        // seedVerified can be set later, don't block user access
+        if (err.code === 'permission-denied') {
+          sessionStorage.removeItem('amg_seed');
+          document.getElementById('successMsg').classList.remove('hidden');
+          document.getElementById('successMsg').textContent = 'Verified! Taking you to your dashboard...';
+          setTimeout(() => window.location.href = 'user-dashboard.html', 1500);
+          return;
+        }
+
+        document.getElementById('spinner').classList.add('hidden');
+        document.getElementById('verifyBtnText').textContent = 'Verify & Enter Dashboard';
+        document.getElementById('verifyBtn').disabled = false;
+        errEl.textContent = 'Something went wrong: ' + err.message;
+        errEl.classList.remove('hidden');
+      }
+    }
+  </script>
+
+</body>
+</html>

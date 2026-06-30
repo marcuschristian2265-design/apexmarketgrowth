@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f3f4f6; }
+    .btn-primary { background: var(--maroon); color: #fff; transition: background .2s; border: none; cursor: pointer; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .input-field {
+      width: 100%; border: 1.5px solid #e5e7eb; border-radius: 12px;
+      padding: 0 16px; height: 50px; font-size: 14px; outline: none;
+      font-family: 'Poppins', sans-serif; transition: border .2s; background: #fff;
+    }
+    .input-field:focus { border-color: var(--maroon); }
+    textarea.input-field { height: 120px; padding-top: 14px; resize: none; }
+    .status-badge { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .badge-open     { background: #dbeafe; color: #1e40af; }
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+    .badge-resolved { background: #d1fae5; color: #065f46; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Top nav -->
+  <div class="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+    <a href="user-dashboard.html" class="text-xl font-black tracking-widest" style="color:var(--maroon)">AMG.</a>
+    <a href="user-dashboard.html" class="text-sm font-semibold text-gray-500 hover:text-gray-800">← Back to Dashboard</a>
+  </div>
+
+  <div class="max-w-4xl mx-auto px-4 py-10">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="text-xs tracking-[0.3em] text-gray-500 font-semibold uppercase">Help Center</div>
+      <h1 class="mt-2 text-3xl font-black text-gray-900">Support Tickets</h1>
+      <p class="mt-2 text-gray-500 text-sm">Submit a ticket and our team will respond within 24 hours.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Submit ticket form -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <div class="text-base font-bold text-gray-900 mb-5">Submit a New Ticket</div>
+
+          <!-- Ticket number preview -->
+          <div class="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 mb-5 flex items-center justify-between">
+            <div class="text-xs text-gray-500 font-semibold">Ticket ID</div>
+            <div class="text-sm font-black text-gray-900" id="ticketIdPreview">Generating...</div>
+          </div>
+
+          <div class="space-y-4">
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">Full Name *</label>
+              <input type="text" id="supportName" class="input-field" placeholder="Your full name" />
+              <div class="text-red-500 text-xs mt-1 hidden" id="nameErr">Please enter your name.</div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">Email Address *</label>
+              <input type="email" id="supportEmail" class="input-field" placeholder="your@email.com" />
+              <div class="text-red-500 text-xs mt-1 hidden" id="emailErr">Please enter a valid email.</div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">Category *</label>
+              <select id="supportCategory" class="input-field" style="cursor:pointer">
+                <option value="">Select a category</option>
+                <option value="Deposit Issue">Deposit Issue</option>
+                <option value="Withdrawal Issue">Withdrawal Issue</option>
+                <option value="Account Access">Account Access</option>
+                <option value="Investment Plan">Investment Plan</option>
+                <option value="Copy Trading">Copy Trading</option>
+                <option value="KYC Verification">KYC Verification</option>
+                <option value="Technical Issue">Technical Issue</option>
+                <option value="Other">Other</option>
+              </select>
+              <div class="text-red-500 text-xs mt-1 hidden" id="catErr">Please select a category.</div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">Subject *</label>
+              <input type="text" id="supportSubject" class="input-field" placeholder="Brief description of your issue" />
+              <div class="text-red-500 text-xs mt-1 hidden" id="subErr">Please enter a subject.</div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">Message *</label>
+              <textarea id="supportMessage" class="input-field" placeholder="Describe your issue in detail. Include any relevant transaction IDs or amounts."></textarea>
+              <div class="text-red-500 text-xs mt-1 hidden" id="msgErr">Please enter your message.</div>
+            </div>
+
+            <!-- Image upload (optional) -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">
+                Attachment <span class="text-gray-400 font-normal">(optional — screenshot or proof)</span>
+              </label>
+              <div class="border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center cursor-pointer hover:border-gray-300 transition" onclick="document.getElementById('supportFile').click()">
+                <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <div class="text-sm text-gray-400" id="fileLabel">Click to upload image (PNG, JPG, max 5MB)</div>
+                <input type="file" id="supportFile" class="hidden" accept="image/*" onchange="handleFileUpload(this)" />
+              </div>
+              <div id="filePreview" class="hidden mt-3">
+                <img id="previewImg" class="w-full max-h-40 object-cover rounded-xl border border-gray-100" />
+              </div>
+            </div>
+
+          </div>
+
+          <div id="submitErr" class="hidden mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm"></div>
+          <div id="submitSuccess" class="hidden mt-4 bg-green-50 border border-green-200 rounded-2xl p-4">
+            <div class="font-bold text-green-800 text-sm">✅ Ticket submitted successfully!</div>
+            <div class="text-green-700 text-xs mt-1" id="successDetail"></div>
+          </div>
+
+          <button onclick="submitTicket()" id="submitBtn" class="btn-primary w-full py-4 rounded-xl font-semibold mt-6 flex items-center justify-center gap-2">
+            <svg id="submitSpinner" class="hidden animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            <span id="submitBtnText">Submit Ticket</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="space-y-4">
+
+        <!-- Info card -->
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+          <div class="text-sm font-bold text-gray-900 mb-4">Support Hours</div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background:#fef3c7">
+                <svg class="w-4 h-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-gray-900">Response Time</div>
+                <div class="text-xs text-gray-500">Within 24 hours</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background:#d1fae5">
+                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-gray-900">Availability</div>
+                <div class="text-xs text-gray-500">Monday – Sunday</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background:#dbeafe">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-gray-900">Email</div>
+                <div class="text-xs text-gray-500">support@apexmarketgrowth.org</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Common issues -->
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+          <div class="text-sm font-bold text-gray-900 mb-4">Common Issues</div>
+          <div class="space-y-2">
+            <div class="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 cursor-pointer hover:bg-gray-100" onclick="fillCategory('Deposit Issue')">💰 Deposit not reflecting</div>
+            <div class="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 cursor-pointer hover:bg-gray-100" onclick="fillCategory('Withdrawal Issue')">💸 Withdrawal delayed</div>
+            <div class="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 cursor-pointer hover:bg-gray-100" onclick="fillCategory('Account Access')">🔐 Can't access account</div>
+            <div class="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 cursor-pointer hover:bg-gray-100" onclick="fillCategory('Investment Plan')">📈 Plan not activated</div>
+            <div class="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 cursor-pointer hover:bg-gray-100" onclick="fillCategory('Copy Trading')">🔁 Copy trade issue</div>
+          </div>
+        </div>
+
+        <!-- Your tickets -->
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+          <div class="text-sm font-bold text-gray-900 mb-4">Your Recent Tickets</div>
+          <div id="myTickets">
+            <div class="text-xs text-gray-400 text-center py-4">No tickets yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp }      from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDrwqA-_CK-22E7PsNlSAIw-bXWN6Dl-mU",
+      authDomain:        "apexmarketgrowth.firebaseapp.com",
+      projectId:         "apexmarketgrowth",
+      storageBucket:     "apexmarketgrowth.firebasestorage.app",
+      messagingSenderId: "81223871224",
+      appId:             "1:81223871224:web:1cf05fadc6e24f90aee90d"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // Generate ticket ID
+    function generateTicketId() {
+      const prefix = 'AMG';
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      return `${prefix}-${timestamp}-${random}`;
+    }
+
+    const ticketId = generateTicketId();
+    document.getElementById('ticketIdPreview').textContent = ticketId;
+
+    let currentUser = null;
+    let userData    = null;
+
+    // Auth state
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          userData = snap.data();
+          document.getElementById('supportName').value  = userData.fullName || '';
+          document.getElementById('supportEmail').value = userData.email || '';
+        }
+        loadMyTickets();
+      }
+    });
+
+    // Load user's tickets
+    async function loadMyTickets() {
+      if (!currentUser) return;
+      try {
+        const q    = query(collection(db, 'tickets'), where('userId','==',currentUser.uid));
+        const snap = await getDocs(q);
+        const el   = document.getElementById('myTickets');
+        if (snap.empty) { el.innerHTML = '<div class="text-xs text-gray-400 text-center py-4">No tickets yet</div>'; return; }
+        const tickets = [];
+        snap.forEach(d => tickets.push({...d.data(), id: d.id}));
+        tickets.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+        el.innerHTML = tickets.slice(0,5).map(t => `
+          <div class="border-b border-gray-100 last:border-0 py-3">
+            <div class="flex items-center justify-between mb-1">
+              <div class="text-xs font-bold text-gray-900">${t.ticketId}</div>
+              <span class="status-badge badge-${t.status||'open'}">${t.status||'open'}</span>
+            </div>
+            <div class="text-xs text-gray-500 truncate">${t.subject}</div>
+            <div class="text-xs text-gray-400 mt-0.5">${t.category}</div>
+          </div>
+        `).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    // File upload handler
+    window.handleFileUpload = function(input) {
+      if (!input.files[0]) return;
+      const file = input.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File too large. Max 5MB.');
+        input.value = '';
+        return;
+      }
+      document.getElementById('fileLabel').textContent = '✓ ' + file.name;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('filePreview').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Fill category from quick links
+    window.fillCategory = function(cat) {
+      document.getElementById('supportCategory').value = cat;
+      document.getElementById('supportCategory').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Submit ticket
+    window.submitTicket = async function() {
+      const name     = document.getElementById('supportName').value.trim();
+      const email    = document.getElementById('supportEmail').value.trim();
+      const category = document.getElementById('supportCategory').value;
+      const subject  = document.getElementById('supportSubject').value.trim();
+      const message  = document.getElementById('supportMessage').value.trim();
+      const file     = document.getElementById('supportFile').files[0];
+      let valid = true;
+
+      // Reset errors
+      ['nameErr','emailErr','catErr','subErr','msgErr'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById('submitErr').classList.add('hidden');
+      document.getElementById('submitSuccess').classList.add('hidden');
+
+      if (!name)    { document.getElementById('nameErr').classList.remove('hidden'); valid = false; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('emailErr').classList.remove('hidden'); valid = false; }
+      if (!category){ document.getElementById('catErr').classList.remove('hidden'); valid = false; }
+      if (!subject) { document.getElementById('subErr').classList.remove('hidden'); valid = false; }
+      if (!message) { document.getElementById('msgErr').classList.remove('hidden'); valid = false; }
+      if (!valid) return;
+
+      // Show loading
+      document.getElementById('submitSpinner').classList.remove('hidden');
+      document.getElementById('submitBtnText').textContent = 'Submitting...';
+      document.getElementById('submitBtn').disabled = true;
+
+      try {
+        // Save ticket to Firestore
+        const ticketData = {
+          ticketId:  ticketId,
+          userId:    currentUser?.uid || 'guest',
+          userName:  name,
+          userEmail: email,
+          category:  category,
+          subject:   subject,
+          message:   message,
+          hasAttachment: !!file,
+          attachmentName: file?.name || '',
+          status:    'open',
+          priority:  'normal',
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, 'tickets'), ticketData);
+
+        // Show success
+        document.getElementById('submitSuccess').classList.remove('hidden');
+        document.getElementById('successDetail').textContent =
+          `Your ticket ${ticketId} has been submitted. We'll reply to ${email} within 24 hours.`;
+
+        // Reset form
+        document.getElementById('supportSubject').value = '';
+        document.getElementById('supportMessage').value = '';
+        document.getElementById('supportFile').value = '';
+        document.getElementById('fileLabel').textContent = 'Click to upload image (PNG, JPG, max 5MB)';
+        document.getElementById('filePreview').classList.add('hidden');
+
+        // Reload tickets list
+        loadMyTickets();
+
+      } catch(e) {
+        console.error(e);
+        document.getElementById('submitErr').textContent = 'Failed to submit ticket. Please try again.';
+        document.getElementById('submitErr').classList.remove('hidden');
+      }
+
+      // Reset button
+      document.getElementById('submitSpinner').classList.add('hidden');
+      document.getElementById('submitBtnText').textContent = 'Submit Ticket';
+      document.getElementById('submitBtn').disabled = false;
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; --maroon-light: #b24a63; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #0f172a; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px; min-height: 100vh;
+      background: #0f172a;
+      border-right: 1px solid #1e293b;
+      position: fixed; top: 0; left: 0; z-index: 40;
+      display: flex; flex-direction: column;
+      transition: transform .3s ease;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 20px; border-radius: 12px; margin: 2px 12px;
+      color: #64748b; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .2s; border: none; background: none;
+      width: calc(100% - 24px); text-align: left;
+    }
+    .nav-link:hover { background: #1e293b; color: #e2e8f0; }
+    .nav-link.active { background: var(--maroon); color: #fff; }
+    .nav-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* ── Main ── */
+    .main { margin-left: 260px; min-height: 100vh; background: #f8fafc; }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      padding: 14px 24px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 30;
+    }
+
+    /* ── Cards ── */
+    .stat-card { background: #fff; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Badges ── */
+    .badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+    .badge-approved { background: #d1fae5; color: #065f46; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; }
+    .badge-active   { background: #dbeafe; color: #1e40af; }
+    .badge-open     { background: #dbeafe; color: #1e40af; }
+    .badge-resolved { background: #d1fae5; color: #065f46; }
+    .badge-user     { background: #f3e8ff; color: #6b21a8; }
+    .badge-admin    { background: #fef3c7; color: #92400e; }
+
+    /* ── Buttons ── */
+    .btn-primary { background: var(--maroon); color: #fff; border: none; cursor: pointer; transition: background .2s; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .btn-success { background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; }
+    .btn-danger  { background: #dc2626; color: #fff; border: none; cursor: pointer; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; }
+    .btn-outline { border: 1.5px solid #e2e8f0; background: #fff; cursor: pointer; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; }
+    .data-table td { padding: 14px 16px; font-size: 13px; color: #374151; border-bottom: 1px solid #f1f5f9; }
+    .data-table tr:hover td { background: #f8fafc; }
+
+    /* ── Input ── */
+    .input-field {
+      border: 1.5px solid #e2e8f0; border-radius: 10px;
+      padding: 0 14px; height: 42px; font-size: 13px; outline: none;
+      font-family: 'Poppins', sans-serif; transition: border .2s; background: #fff;
+    }
+    .input-field:focus { border-color: var(--maroon); }
+
+    /* ── Modal ── */
+    .modal { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal.open { display: flex; }
+    .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
+    .modal-box { position: relative; background: #fff; border-radius: 24px; padding: 24px; width: 100%; max-width: 480px; z-index: 10; max-height: 90vh; overflow-y: auto; }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-260px); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="p-6 border-b border-slate-800">
+    <div class="text-xl font-black tracking-widest text-white">AMG. <span class="text-xs font-semibold text-red-400 ml-1">ADMIN</span></div>
+    <div class="text-xs text-slate-500 mt-1">Control Panel</div>
+  </div>
+
+  <div class="px-5 py-4 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style="background:var(--maroon)">A</div>
+      <div>
+        <div class="text-sm font-bold text-white">Admin</div>
+        <div class="text-xs text-slate-500">Super Administrator</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="flex-1 py-4 overflow-y-auto">
+    <div class="px-5 mb-2 text-xs font-semibold text-slate-600 uppercase tracking-wider">Overview</div>
+
+    <button class="nav-link active" onclick="showSection('overview')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Dashboard
+    </button>
+
+    <div class="px-5 mt-4 mb-2 text-xs font-semibold text-slate-600 uppercase tracking-wider">Management</div>
+
+    <button class="nav-link" onclick="showSection('users')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Users
+      <span id="usersCount" class="ml-auto bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded-full">0</span>
+    </button>
+
+    <button class="nav-link" onclick="showSection('deposits')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Deposits
+      <span id="depositsCount" class="ml-auto bg-yellow-900 text-yellow-300 text-xs px-2 py-0.5 rounded-full">0</span>
+    </button>
+
+    <button class="nav-link" onclick="showSection('withdrawals')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+      Withdrawals
+      <span id="withdrawalsCount" class="ml-auto bg-yellow-900 text-yellow-300 text-xs px-2 py-0.5 rounded-full">0</span>
+    </button>
+
+    <button class="nav-link" onclick="showSection('investments')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Investments
+    </button>
+
+    <button class="nav-link" onclick="showSection('copytrades')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      Copy Trades
+    </button>
+
+    <button class="nav-link" onclick="showSection('tickets')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+      Support Tickets
+      <span id="ticketsCount" class="ml-auto bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded-full">0</span>
+    </button>
+
+    <div class="px-5 mt-4 mb-2 text-xs font-semibold text-slate-600 uppercase tracking-wider">System</div>
+
+    <button class="nav-link" onclick="showSection('notifications')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Send Notification
+    </button>
+
+    <button class="nav-link text-red-400" onclick="handleLogout()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Log Out
+    </button>
+  </nav>
+</aside>
+
+<!-- ══════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════ -->
+<div class="main" id="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="flex items-center gap-3">
+      <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="md:hidden p-2 rounded-xl hover:bg-gray-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div>
+        <div class="text-sm font-bold text-gray-900" id="pageTitle">Dashboard Overview</div>
+        <div class="text-xs text-gray-400" id="pageDate"></div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-xs text-gray-500 hidden sm:block">Admin Panel</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:var(--maroon)">A</div>
+    </div>
+  </div>
+
+  <div class="p-6">
+
+    <!-- ══ OVERVIEW ══ -->
+    <div class="section active" id="sec-overview">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Admin Overview</h2>
+        <p class="text-gray-500 text-sm mt-1">Platform summary and pending actions.</p>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Users</div>
+          <div class="text-3xl font-black text-gray-900 mt-2" id="statUsers">0</div>
+          <div class="text-xs text-gray-400 mt-1">Registered</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending Deposits</div>
+          <div class="text-3xl font-black text-yellow-600 mt-2" id="statPendingDep">0</div>
+          <div class="text-xs text-gray-400 mt-1">Awaiting approval</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending Withdrawals</div>
+          <div class="text-3xl font-black text-red-600 mt-2" id="statPendingWith">0</div>
+          <div class="text-xs text-gray-400 mt-1">Awaiting approval</div>
+        </div>
+        <div class="stat-card">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Open Tickets</div>
+          <div class="text-3xl font-black text-blue-600 mt-2" id="statOpenTickets">0</div>
+          <div class="text-xs text-gray-400 mt-1">Support requests</div>
+        </div>
+      </div>
+
+      <!-- Revenue cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--maroon), var(--maroon-light)); border: none;">
+          <div class="text-xs font-semibold text-white/70 uppercase tracking-wider">Total Deposits</div>
+          <div class="text-3xl font-black text-white mt-2" id="statTotalDep">$0</div>
+          <div class="text-xs text-white/60 mt-1">All time approved</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #065f46, #059669); border: none;">
+          <div class="text-xs font-semibold text-white/70 uppercase tracking-wider">Total Withdrawals</div>
+          <div class="text-3xl font-black text-white mt-2" id="statTotalWith">$0</div>
+          <div class="text-xs text-white/60 mt-1">All time approved</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #1e3a5f, #1e40af); border: none;">
+          <div class="text-xs font-semibold text-white/70 uppercase tracking-wider">Active Investments</div>
+          <div class="text-3xl font-black text-white mt-2" id="statActiveInv">0</div>
+          <div class="text-xs text-white/60 mt-1">Currently running</div>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-sm font-bold text-gray-900">Recent Deposits</div>
+            <button onclick="showSection('deposits')" class="text-xs font-semibold" style="color:var(--maroon)">View all →</button>
+          </div>
+          <div id="recentDeposits"><div class="text-center py-6 text-gray-400 text-sm">Loading...</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-sm font-bold text-gray-900">Recent Withdrawals</div>
+            <button onclick="showSection('withdrawals')" class="text-xs font-semibold" style="color:var(--maroon)">View all →</button>
+          </div>
+          <div id="recentWithdrawals"><div class="text-center py-6 text-gray-400 text-sm">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ USERS ══ -->
+    <div class="section" id="sec-users">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-2xl font-black text-gray-900">Users</h2>
+          <p class="text-gray-500 text-sm mt-1">Manage all registered users.</p>
+        </div>
+        <input type="text" id="userSearch" class="input-field w-64" placeholder="Search by name or email..." oninput="searchUsers()" />
+      </div>
+      <div class="stat-card overflow-x-auto">
+        <table class="data-table" id="usersTable">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Country</th>
+              <th>Balance</th>
+              <th>Status</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="7" class="text-center py-8 text-gray-400">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ DEPOSITS ══ -->
+    <div class="section" id="sec-deposits">
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h2 class="text-2xl font-black text-gray-900">Deposits</h2>
+          <p class="text-gray-500 text-sm mt-1">Review and approve deposit requests.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="filterDeposits('all', this)" class="btn-outline active-filter">All</button>
+          <button onclick="filterDeposits('pending', this)" class="btn-outline">Pending</button>
+          <button onclick="filterDeposits('approved', this)" class="btn-outline">Approved</button>
+          <button onclick="filterDeposits('rejected', this)" class="btn-outline">Rejected</button>
+        </div>
+      </div>
+      <div class="stat-card overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Amount</th>
+              <th>Crypto</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="depositsBody">
+            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading deposits...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ WITHDRAWALS ══ -->
+    <div class="section" id="sec-withdrawals">
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h2 class="text-2xl font-black text-gray-900">Withdrawals</h2>
+          <p class="text-gray-500 text-sm mt-1">Review and process withdrawal requests.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="filterWithdrawals('all', this)" class="btn-outline">All</button>
+          <button onclick="filterWithdrawals('pending', this)" class="btn-outline">Pending</button>
+          <button onclick="filterWithdrawals('approved', this)" class="btn-outline">Approved</button>
+          <button onclick="filterWithdrawals('rejected', this)" class="btn-outline">Rejected</button>
+        </div>
+      </div>
+      <div class="stat-card overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Amount</th>
+              <th>Crypto</th>
+              <th>Wallet</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawalsBody">
+            <tr><td colspan="7" class="text-center py-8 text-gray-400">Loading withdrawals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ INVESTMENTS ══ -->
+    <div class="section" id="sec-investments">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Active Investments</h2>
+        <p class="text-gray-500 text-sm mt-1">All users with active investment plans.</p>
+      </div>
+      <div class="stat-card overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Plan</th>
+              <th>ROI</th>
+              <th>Duration</th>
+              <th>Started</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="investmentsBody">
+            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading investments...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ COPY TRADES ══ -->
+    <div class="section" id="sec-copytrades">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Copy Trades</h2>
+        <p class="text-gray-500 text-sm mt-1">All active copy trading allocations.</p>
+      </div>
+      <div class="stat-card overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Expert</th>
+              <th>Amount</th>
+              <th>ROI</th>
+              <th>Est. Earnings</th>
+              <th>End Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="copytradesBody">
+            <tr><td colspan="8" class="text-center py-8 text-gray-400">Loading copy trades...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ SUPPORT TICKETS ══ -->
+    <div class="section" id="sec-tickets">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Support Tickets</h2>
+        <p class="text-gray-500 text-sm mt-1">Manage and respond to user support requests.</p>
+      </div>
+      <div class="stat-card overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ticket ID</th>
+              <th>User</th>
+              <th>Category</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsBody">
+            <tr><td colspan="7" class="text-center py-8 text-gray-400">Loading tickets...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ SEND NOTIFICATION ══ -->
+    <div class="section" id="sec-notifications">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-900">Send Notification</h2>
+        <p class="text-gray-500 text-sm mt-1">Send notifications to specific users or all users.</p>
+      </div>
+      <div class="max-w-xl">
+        <div class="stat-card space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-2">Send To</label>
+            <select id="notifTarget" class="input-field w-full">
+              <option value="all">All Users</option>
+              <option value="specific">Specific User (enter email below)</option>
+            </select>
+          </div>
+          <div id="specificUserField" class="hidden">
+            <label class="block text-xs font-semibold text-gray-600 mb-2">User Email</label>
+            <input type="email" id="notifUserEmail" class="input-field w-full" placeholder="user@example.com" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-2">Type</label>
+            <select id="notifType" class="input-field w-full">
+              <option value="info">ℹ️ Info</option>
+              <option value="deposit">💰 Deposit Update</option>
+              <option value="withdrawal">💸 Withdrawal Update</option>
+              <option value="investment">📈 Investment Update</option>
+              <option value="warning">⚠️ Warning</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-2">Title</label>
+            <input type="text" id="notifTitle" class="input-field w-full" placeholder="Notification title" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-2">Message</label>
+            <textarea id="notifMessage" class="input-field w-full" style="height:100px;padding-top:12px;resize:none" placeholder="Notification message..."></textarea>
+          </div>
+          <div id="notifMsg" class="hidden rounded-xl px-4 py-3 text-sm"></div>
+          <button onclick="sendAdminNotification()" class="btn-primary w-full py-3">Send Notification</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ USER DETAIL MODAL ══ -->
+<div class="modal" id="userModal">
+  <div class="modal-overlay" onclick="closeModal('userModal')"></div>
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <div class="text-lg font-black text-gray-900">User Details</div>
+      <button onclick="closeModal('userModal')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="userModalContent"></div>
+  </div>
+</div>
+
+<!-- ══ TICKET REPLY MODAL ══ -->
+<div class="modal" id="ticketModal">
+  <div class="modal-overlay" onclick="closeModal('ticketModal')"></div>
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-5">
+      <div class="text-lg font-black text-gray-900">Ticket Details</div>
+      <button onclick="closeModal('ticketModal')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="ticketModalContent"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDrwqA-_CK-22E7PsNlSAIw-bXWN6Dl-mU",
+    authDomain:        "apexmarketgrowth.firebaseapp.com",
+    projectId:         "apexmarketgrowth",
+    storageBucket:     "apexmarketgrowth.firebasestorage.app",
+    messagingSenderId: "81223871224",
+    appId:             "1:81223871224:web:1cf05fadc6e24f90aee90d"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let allUsers = [], allDeposits = [], allWithdrawals = [], allCopytrades = [], allTickets = [];
+
+  // ── Auth guard — admin only ──
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = '../login.html'; return; }
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists() || snap.data().role !== 'admin') {
+      window.location.href = '../dashboard.html';
+      return;
+    }
+    loadAll();
+    setDate();
+  });
+
+  function setDate() {
+    document.getElementById('pageDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+
+  // ── Load everything ──
+  async function loadAll() {
+    await Promise.all([loadUsers(), loadDeposits(), loadWithdrawals(), loadCopytrades(), loadTickets()]);
+    renderOverview();
+  }
+
+  // ── Load users ──
+  async function loadUsers() {
+    const snap = await getDocs(collection(db, 'users'));
+    allUsers = [];
+    snap.forEach(d => allUsers.push({...d.data(), id:d.id}));
+    document.getElementById('usersCount').textContent = allUsers.length;
+    document.getElementById('statUsers').textContent  = allUsers.length;
+    renderUsers(allUsers);
+  }
+
+  // ── Load deposits ──
+  async function loadDeposits() {
+    const snap = await getDocs(collection(db, 'deposits'));
+    allDeposits = [];
+    snap.forEach(d => allDeposits.push({...d.data(), id:d.id}));
+    const pending = allDeposits.filter(d => d.status === 'pending').length;
+    document.getElementById('depositsCount').textContent   = pending;
+    document.getElementById('statPendingDep').textContent  = pending;
+    renderDeposits(allDeposits);
+  }
+
+  // ── Load withdrawals ──
+  async function loadWithdrawals() {
+    const snap = await getDocs(collection(db, 'withdrawals'));
+    allWithdrawals = [];
+    snap.forEach(d => allWithdrawals.push({...d.data(), id:d.id}));
+    const pending = allWithdrawals.filter(w => w.status === 'pending').length;
+    document.getElementById('withdrawalsCount').textContent  = pending;
+    document.getElementById('statPendingWith').textContent   = pending;
+    renderWithdrawals(allWithdrawals);
+  }
+
+  // ── Load copy trades ──
+  async function loadCopytrades() {
+    const snap = await getDocs(collection(db, 'copytrading'));
+    allCopytrades = [];
+    snap.forEach(d => allCopytrades.push({...d.data(), id:d.id}));
+    renderCopytrades(allCopytrades);
+  }
+
+  // ── Load tickets ──
+  async function loadTickets() {
+    const snap = await getDocs(collection(db, 'tickets'));
+    allTickets = [];
+    snap.forEach(d => allTickets.push({...d.data(), id:d.id}));
+    const open = allTickets.filter(t => t.status === 'open').length;
+    document.getElementById('ticketsCount').textContent    = open;
+    document.getElementById('statOpenTickets').textContent = open;
+    renderTickets(allTickets);
+  }
+
+  // ── Render overview ──
+  function renderOverview() {
+    const approvedDep = allDeposits.filter(d=>d.status==='approved').reduce((s,d)=>s+Number(d.amount||0),0);
+    const approvedWith = allWithdrawals.filter(w=>w.status==='approved').reduce((s,w)=>s+Number(w.amount||0),0);
+    const activeInv   = allUsers.filter(u=>u.activePlan).length;
+    document.getElementById('statTotalDep').textContent  = '$'+approvedDep.toLocaleString();
+    document.getElementById('statTotalWith').textContent = '$'+approvedWith.toLocaleString();
+    document.getElementById('statActiveInv').textContent = activeInv;
+
+    // Recent deposits
+    const recDep = [...allDeposits].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,5);
+    document.getElementById('recentDeposits').innerHTML = recDep.length ? recDep.map(d=>`
+      <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+        <div>
+          <div class="text-sm font-semibold text-gray-900">${d.userName||d.userEmail||'Unknown'}</div>
+          <div class="text-xs text-gray-400">${d.crypto||''} · ${d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():''}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold">$${Number(d.amount||0).toLocaleString()}</div>
+          <span class="badge badge-${d.status||'pending'}">${d.status||'pending'}</span>
+        </div>
+      </div>`).join('') : '<div class="text-center py-6 text-gray-400 text-sm">No deposits yet</div>';
+
+    // Recent withdrawals
+    const recWith = [...allWithdrawals].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,5);
+    document.getElementById('recentWithdrawals').innerHTML = recWith.length ? recWith.map(w=>`
+      <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+        <div>
+          <div class="text-sm font-semibold text-gray-900">${w.userName||w.userEmail||'Unknown'}</div>
+          <div class="text-xs text-gray-400">${w.crypto||''} · ${w.createdAt?new Date(w.createdAt.seconds*1000).toLocaleDateString():''}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm font-bold">$${Number(w.amount||0).toLocaleString()}</div>
+          <span class="badge badge-${w.status||'pending'}">${w.status||'pending'}</span>
+        </div>
+      </div>`).join('') : '<div class="text-center py-6 text-gray-400 text-sm">No withdrawals yet</div>';
+  }
+
+  // ── Render users ──
+  function renderUsers(users) {
+    const body = document.getElementById('usersBody');
+    if (!users.length) { body.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No users found</td></tr>'; return; }
+    body.innerHTML = users.map(u => `
+      <tr>
+        <td>
+          <div class="font-semibold text-gray-900">${u.fullName||'N/A'}</div>
+          <div class="text-xs text-gray-400">${u.email||''}</div>
+        </td>
+        <td>${u.country||'—'}</td>
+        <td class="font-bold">$${Number(u.balance||0).toLocaleString()}</td>
+        <td><span class="badge badge-${u.status||'active'}">${u.status||'active'}</span></td>
+        <td><span class="badge badge-${u.role||'user'}">${u.role||'user'}</span></td>
+        <td class="text-xs text-gray-400">${u.createdAt?new Date(u.createdAt.seconds*1000).toLocaleDateString():'—'}</td>
+        <td>
+          <div class="flex gap-2">
+            <button onclick="viewUser('${u.id}')" class="btn-outline text-xs py-1.5 px-3">View</button>
+            <button onclick="adjustBalance('${u.id}','${u.fullName||u.email}',${u.balance||0})" class="btn-primary text-xs py-1.5 px-3">Balance</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Render deposits ──
+  function renderDeposits(deps) {
+    const body = document.getElementById('depositsBody');
+    if (!deps.length) { body.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No deposits found</td></tr>'; return; }
+    const sorted = [...deps].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    body.innerHTML = sorted.map(d => `
+      <tr>
+        <td>
+          <div class="font-semibold text-gray-900">${d.userName||'N/A'}</div>
+          <div class="text-xs text-gray-400">${d.userEmail||''}</div>
+        </td>
+        <td class="font-bold">$${Number(d.amount||0).toLocaleString()}</td>
+        <td>${d.crypto||'—'}</td>
+        <td><span class="badge badge-${d.status||'pending'}">${d.status||'pending'}</span></td>
+        <td class="text-xs text-gray-400">${d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():'—'}</td>
+        <td>
+          ${d.status==='pending' ? `
+          <div class="flex gap-2">
+            <button onclick="approveDeposit('${d.id}','${d.userId}',${d.amount})" class="btn-success text-xs py-1.5 px-3">Approve</button>
+            <button onclick="rejectDeposit('${d.id}','${d.userId}')" class="btn-danger text-xs py-1.5 px-3">Reject</button>
+          </div>` : `<span class="text-xs text-gray-400">—</span>`}
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Render withdrawals ──
+  function renderWithdrawals(withs) {
+    const body = document.getElementById('withdrawalsBody');
+    if (!withs.length) { body.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No withdrawals found</td></tr>'; return; }
+    const sorted = [...withs].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    body.innerHTML = sorted.map(w => `
+      <tr>
+        <td>
+          <div class="font-semibold text-gray-900">${w.userName||'N/A'}</div>
+          <div class="text-xs text-gray-400">${w.userEmail||''}</div>
+        </td>
+        <td class="font-bold">$${Number(w.amount||0).toLocaleString()}</td>
+        <td>${w.crypto||'—'}</td>
+        <td class="text-xs font-mono text-gray-500 max-w-xs truncate">${w.wallet||'—'}</td>
+        <td><span class="badge badge-${w.status||'pending'}">${w.status||'pending'}</span></td>
+        <td class="text-xs text-gray-400">${w.createdAt?new Date(w.createdAt.seconds*1000).toLocaleDateString():'—'}</td>
+        <td>
+          ${w.status==='pending' ? `
+          <div class="flex gap-2">
+            <button onclick="approveWithdrawal('${w.id}','${w.userId}',${w.amount})" class="btn-success text-xs py-1.5 px-3">Approve</button>
+            <button onclick="rejectWithdrawal('${w.id}','${w.userId}',${w.amount})" class="btn-danger text-xs py-1.5 px-3">Reject</button>
+          </div>` : `<span class="text-xs text-gray-400">—</span>`}
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Render copy trades ──
+  function renderCopytrades(trades) {
+    const body = document.getElementById('copytradesBody');
+    if (!trades.length) { body.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">No copy trades found</td></tr>'; return; }
+    body.innerHTML = trades.map(t => `
+      <tr>
+        <td>
+          <div class="font-semibold text-gray-900">${t.userName||'N/A'}</div>
+          <div class="text-xs text-gray-400">${t.userEmail||''}</div>
+        </td>
+        <td>${t.expert||'—'}</td>
+        <td class="font-bold">$${Number(t.amount||0).toLocaleString()}</td>
+        <td class="text-green-600 font-bold">${t.roi||0}%</td>
+        <td class="text-green-600">+$${Number(t.earnings||0).toLocaleString()}</td>
+        <td class="text-xs text-gray-400">${t.endDate?new Date(t.endDate).toLocaleDateString():'—'}</td>
+        <td><span class="badge badge-${t.status||'active'}">${t.status||'active'}</span></td>
+        <td>
+          ${t.status==='active'?`<button onclick="completeCopytrade('${t.id}','${t.userId}',${t.amount},${t.earnings})" class="btn-success text-xs py-1.5 px-3">Complete</button>`:'<span class="text-xs text-gray-400">Done</span>'}
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Render tickets ──
+  function renderTickets(tickets) {
+    const body = document.getElementById('ticketsBody');
+    if (!tickets.length) { body.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No tickets found</td></tr>'; return; }
+    const sorted = [...tickets].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    body.innerHTML = sorted.map(t => `
+      <tr>
+        <td class="font-mono text-xs font-bold text-gray-700">${t.ticketId||'—'}</td>
+        <td>
+          <div class="font-semibold text-gray-900">${t.userName||'N/A'}</div>
+          <div class="text-xs text-gray-400">${t.userEmail||''}</div>
+        </td>
+        <td class="text-xs">${t.category||'—'}</td>
+        <td class="text-sm max-w-xs truncate">${t.subject||'—'}</td>
+        <td><span class="badge badge-${t.status||'open'}">${t.status||'open'}</span></td>
+        <td class="text-xs text-gray-400">${t.createdAt?new Date(t.createdAt.seconds*1000).toLocaleDateString():'—'}</td>
+        <td>
+          <button onclick="viewTicket('${t.id}')" class="btn-outline text-xs py-1.5 px-3">View & Reply</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Approve deposit ──
+  window.approveDeposit = async function(depId, userId, amount) {
+    if (!confirm(`Approve deposit of $${amount}?`)) return;
+    try {
+      await updateDoc(doc(db,'deposits',depId), { status:'approved' });
+      const userSnap = await getDoc(doc(db,'users',userId));
+      if (userSnap.exists()) {
+        const newBal = (userSnap.data().balance||0) + Number(amount);
+        const newTotalDep = (userSnap.data().totalDeposits||0) + Number(amount);
+        await updateDoc(doc(db,'users',userId), { balance: newBal, totalDeposits: newTotalDep });
+      }
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'deposit',
+        title: 'Deposit Approved ✅',
+        message: `Your deposit of $${Number(amount).toLocaleString()} has been approved and added to your balance.`,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Deposit approved and balance updated!', 'success');
+      loadDeposits();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Reject deposit ──
+  window.rejectDeposit = async function(depId, userId) {
+    if (!confirm('Reject this deposit?')) return;
+    try {
+      await updateDoc(doc(db,'deposits',depId), { status:'rejected' });
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'deposit',
+        title: 'Deposit Rejected ❌',
+        message: 'Your deposit request has been rejected. Please contact support for more information.',
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Deposit rejected.', 'success');
+      loadDeposits();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Approve withdrawal ──
+  window.approveWithdrawal = async function(withId, userId, amount) {
+    if (!confirm(`Approve withdrawal of $${amount}? This will deduct from user balance.`)) return;
+    try {
+      await updateDoc(doc(db,'withdrawals',withId), { status:'approved' });
+      const userSnap = await getDoc(doc(db,'users',userId));
+      if (userSnap.exists()) {
+        const newBal  = Math.max(0,(userSnap.data().balance||0) - Number(amount));
+        const newWith = (userSnap.data().totalWithdrawals||0) + Number(amount);
+        await updateDoc(doc(db,'users',userId), { balance: newBal, totalWithdrawals: newWith });
+      }
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'withdrawal',
+        title: 'Withdrawal Approved ✅',
+        message: `Your withdrawal of $${Number(amount).toLocaleString()} has been approved and is being processed.`,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Withdrawal approved!', 'success');
+      loadWithdrawals();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Reject withdrawal ──
+  window.rejectWithdrawal = async function(withId, userId, amount) {
+    if (!confirm('Reject this withdrawal? The amount will be returned to user balance.')) return;
+    try {
+      await updateDoc(doc(db,'withdrawals',withId), { status:'rejected' });
+      const userSnap = await getDoc(doc(db,'users',userId));
+      if (userSnap.exists()) {
+        const newBal = (userSnap.data().balance||0) + Number(amount);
+        await updateDoc(doc(db,'users',userId), { balance: newBal });
+      }
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'withdrawal',
+        title: 'Withdrawal Rejected ❌',
+        message: `Your withdrawal request of $${Number(amount).toLocaleString()} has been rejected and the amount has been returned to your balance.`,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Withdrawal rejected and balance restored.', 'success');
+      loadWithdrawals();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Complete copy trade ──
+  window.completeCopytrade = async function(tradeId, userId, amount, earnings) {
+    if (!confirm(`Mark copy trade complete and credit $${Number(amount+earnings).toLocaleString()} to user?`)) return;
+    try {
+      await updateDoc(doc(db,'copytrading',tradeId), { status:'completed' });
+      const userSnap = await getDoc(doc(db,'users',userId));
+      if (userSnap.exists()) {
+        const newBal  = (userSnap.data().balance||0) + Number(amount) + Number(earnings);
+        const newEarn = (userSnap.data().totalEarnings||0) + Number(earnings);
+        await updateDoc(doc(db,'users',userId), { balance: newBal, totalEarnings: newEarn });
+      }
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'investment',
+        title: 'Copy Trade Completed 🎉',
+        message: `Your copy trade has completed! $${Number(amount).toLocaleString()} + $${Number(earnings).toLocaleString()} earnings have been credited to your balance.`,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Copy trade completed and earnings credited!', 'success');
+      loadCopytrades();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── View user ──
+  window.viewUser = async function(userId) {
+    const snap = await getDoc(doc(db,'users',userId));
+    if (!snap.exists()) return;
+    const u = snap.data();
+    document.getElementById('userModalContent').innerHTML = `
+      <div class="space-y-3 mb-5">
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Name</span><span class="font-bold">${u.fullName||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Email</span><span class="font-bold">${u.email||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Phone</span><span class="font-bold">${u.phone||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Country</span><span class="font-bold">${u.country||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Balance</span><span class="font-black text-green-600">$${Number(u.balance||0).toLocaleString()}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Total Deposits</span><span class="font-bold">$${Number(u.totalDeposits||0).toLocaleString()}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Total Withdrawals</span><span class="font-bold">$${Number(u.totalWithdrawals||0).toLocaleString()}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Total Earnings</span><span class="font-bold">$${Number(u.totalEarnings||0).toLocaleString()}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Role</span><span class="badge badge-${u.role||'user'}">${u.role||'user'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Status</span><span class="badge badge-${u.status||'active'}">${u.status||'active'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Seed Verified</span><span class="font-bold">${u.seedVerified?'✅ Yes':'❌ No'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Active Plan</span><span class="font-bold">${u.activePlan?u.activePlan.name:'None'}</span></div>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="toggleUserStatus('${userId}','${u.status||'active'}')" class="${u.status==='suspended'?'btn-success':'btn-danger'} text-sm py-2 px-4">
+          ${u.status==='suspended'?'Activate User':'Suspend User'}
+        </button>
+        <button onclick="makeAdmin('${userId}','${u.role||'user'}')" class="btn-outline text-sm py-2 px-4">
+          ${u.role==='admin'?'Remove Admin':'Make Admin'}
+        </button>
+      </div>
+    `;
+    openModal('userModal');
+  }
+
+  // ── Adjust balance ──
+  window.adjustBalance = async function(userId, name, currentBal) {
+    const amount = prompt(`Adjust balance for ${name}\nCurrent: $${currentBal}\n\nEnter new balance amount:`);
+    if (amount === null || amount === '') return;
+    const newBal = parseFloat(amount);
+    if (isNaN(newBal)) { alert('Invalid amount'); return; }
+    try {
+      await updateDoc(doc(db,'users',userId), { balance: newBal });
+      showToast(`Balance updated to $${newBal.toLocaleString()}`, 'success');
+      loadUsers();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Toggle user status ──
+  window.toggleUserStatus = async function(userId, currentStatus) {
+    const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+    if (!confirm(`${newStatus === 'suspended' ? 'Suspend' : 'Activate'} this user?`)) return;
+    try {
+      await updateDoc(doc(db,'users',userId), { status: newStatus });
+      showToast(`User ${newStatus}!`, 'success');
+      closeModal('userModal');
+      loadUsers();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Make admin ──
+  window.makeAdmin = async function(userId, currentRole) {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    if (!confirm(`Change role to ${newRole}?`)) return;
+    try {
+      await updateDoc(doc(db,'users',userId), { role: newRole });
+      showToast(`Role changed to ${newRole}!`, 'success');
+      closeModal('userModal');
+      loadUsers();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── View ticket ──
+  window.viewTicket = async function(ticketId) {
+    const ticket = allTickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+    document.getElementById('ticketModalContent').innerHTML = `
+      <div class="space-y-3 mb-5">
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Ticket ID</span><span class="font-mono font-bold">${ticket.ticketId||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">From</span><span class="font-bold">${ticket.userName||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Email</span><span class="font-bold">${ticket.userEmail||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Category</span><span class="font-bold">${ticket.category||'—'}</span></div>
+        <div class="flex justify-between text-sm"><span class="text-gray-500">Status</span><span class="badge badge-${ticket.status||'open'}">${ticket.status||'open'}</span></div>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 mb-4">
+        <div class="text-xs font-bold text-gray-700 mb-2">${ticket.subject||'No subject'}</div>
+        <div class="text-sm text-gray-600 leading-relaxed">${ticket.message||'—'}</div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Reply to User</label>
+        <textarea id="ticketReply" class="input-field w-full" style="height:100px;padding-top:12px;resize:none" placeholder="Type your reply..."></textarea>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="replyTicket('${ticketId}','${ticket.userId}','${ticket.userEmail}')" class="btn-primary flex-1 py-2.5">Send Reply</button>
+        <button onclick="resolveTicket('${ticketId}')" class="btn-success flex-1 py-2.5">Mark Resolved</button>
+      </div>
+    `;
+    openModal('ticketModal');
+  }
+
+  // ── Reply to ticket ──
+  window.replyTicket = async function(ticketId, userId, userEmail) {
+    const reply = document.getElementById('ticketReply').value.trim();
+    if (!reply) { alert('Please enter a reply.'); return; }
+    try {
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'info',
+        title: `Support Reply — Ticket ${allTickets.find(t=>t.id===ticketId)?.ticketId||''}`,
+        message: reply,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast('Reply sent to user!', 'success');
+      closeModal('ticketModal');
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Resolve ticket ──
+  window.resolveTicket = async function(ticketId) {
+    try {
+      await updateDoc(doc(db,'tickets',ticketId), { status:'resolved' });
+      showToast('Ticket marked as resolved!', 'success');
+      closeModal('ticketModal');
+      loadTickets();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Send admin notification ──
+  window.sendAdminNotification = async function() {
+    const target  = document.getElementById('notifTarget').value;
+    const type    = document.getElementById('notifType').value;
+    const title   = document.getElementById('notifTitle').value.trim();
+    const message = document.getElementById('notifMessage').value.trim();
+    const msgEl   = document.getElementById('notifMsg');
+
+    if (!title || !message) { msgEl.textContent='Please fill in title and message.'; msgEl.className='bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm'; msgEl.classList.remove('hidden'); return; }
+
+    try {
+      if (target === 'all') {
+        for (const user of allUsers) {
+          await addDoc(collection(db,'notifications'), { userId:user.id, type, title, message, read:false, createdAt:serverTimestamp() });
+        }
+        showToast(`Notification sent to all ${allUsers.length} users!`, 'success');
+      } else {
+        const email = document.getElementById('notifUserEmail').value.trim();
+        const user  = allUsers.find(u => u.email === email);
+        if (!user) { msgEl.textContent='User not found with that email.'; msgEl.className='bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm'; msgEl.classList.remove('hidden'); return; }
+        await addDoc(collection(db,'notifications'), { userId:user.id, type, title, message, read:false, createdAt:serverTimestamp() });
+        showToast('Notification sent!', 'success');
+      }
+      document.getElementById('notifTitle').value   = '';
+      document.getElementById('notifMessage').value = '';
+      msgEl.classList.add('hidden');
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Search users ──
+  window.searchUsers = function() {
+    const q = document.getElementById('userSearch').value.toLowerCase();
+    const filtered = allUsers.filter(u => (u.fullName||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q));
+    renderUsers(filtered);
+  }
+
+  // ── Filter deposits ──
+  window.filterDeposits = function(status, btn) {
+    const filtered = status === 'all' ? allDeposits : allDeposits.filter(d => d.status === status);
+    renderDeposits(filtered);
+  }
+
+  // ── Filter withdrawals ──
+  window.filterWithdrawals = function(status, btn) {
+    const filtered = status === 'all' ? allWithdrawals : allWithdrawals.filter(w => w.status === status);
+    renderWithdrawals(filtered);
+  }
+
+  // ── Investments section ──
+  function loadInvestmentsSection() {
+    const usersWithPlans = allUsers.filter(u => u.activePlan);
+    const body = document.getElementById('investmentsBody');
+    if (!usersWithPlans.length) { body.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No active investments</td></tr>'; return; }
+    body.innerHTML = usersWithPlans.map(u => `
+      <tr>
+        <td>
+          <div class="font-semibold text-gray-900">${u.fullName||'N/A'}</div>
+          <div class="text-xs text-gray-400">${u.email||''}</div>
+        </td>
+        <td class="font-bold">${u.activePlan.name}</td>
+        <td class="text-green-600 font-bold">${u.activePlan.roi}%</td>
+        <td>${u.activePlan.days} days</td>
+        <td class="text-xs text-gray-400">${u.activePlan.startedAt?new Date(u.activePlan.startedAt).toLocaleDateString():'—'}</td>
+        <td>
+          <button onclick="completeInvestment('${u.id}','${u.fullName||u.email}',${u.balance||0},${u.activePlan.roi})" class="btn-success text-xs py-1.5 px-3">Complete & Pay ROI</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  window.completeInvestment = async function(userId, name, balance, roi) {
+    if (!confirm(`Complete investment for ${name} and credit ROI of ${roi}%?`)) return;
+    try {
+      const userSnap = await getDoc(doc(db,'users',userId));
+      const userData = userSnap.data();
+      const earnings = parseFloat(((userData.balance||0) * roi / 100).toFixed(2));
+      const newBal   = (userData.balance||0) + earnings;
+      await updateDoc(doc(db,'users',userId), {
+        balance: newBal,
+        totalEarnings: (userData.totalEarnings||0) + earnings,
+        activePlan: null
+      });
+      await addDoc(collection(db,'notifications'), {
+        userId, type:'investment',
+        title: 'Investment Completed 🎉',
+        message: `Your investment plan has completed! ROI earnings of $${earnings.toLocaleString()} have been credited to your balance.`,
+        read: false, createdAt: serverTimestamp()
+      });
+      showToast(`Investment completed. $${earnings.toLocaleString()} credited!`, 'success');
+      loadUsers();
+    } catch(e) { showToast('Error: '+e.message, 'error'); }
+  }
+
+  // ── Modal helpers ──
+  window.openModal  = id => document.getElementById(id).classList.add('open');
+  window.closeModal = id => document.getElementById(id).classList.remove('open');
+
+  // ── Toast notification ──
+  function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-6 right-6 z-50 px-5 py-4 rounded-2xl shadow-lg text-sm font-semibold text-white ${type==='success'?'bg-green-600':'bg-red-600'}`;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+  }
+
+  // ── Specific user notification field ──
+  document.getElementById('notifTarget').addEventListener('change', function() {
+    document.getElementById('specificUserField').classList.toggle('hidden', this.value !== 'specific');
+  });
+
+  // ── Logout ──
+  window.handleLogout = async function() {
+    if (confirm('Log out of admin panel?')) {
+      await signOut(auth);
+      window.location.href = '../login.html';
+    }
+  }
+
+  // Load investments when section opens
+  const origShowSection = window.showSection;
+  window._loadInv = loadInvestmentsSection;
+</script>
+
+<script>
+  window.showSection = function(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('sec-' + name).classList.add('active');
+    const titles = { overview:'Dashboard Overview', users:'Users', deposits:'Deposits', withdrawals:'Withdrawals', investments:'Investments', copytrades:'Copy Trades', tickets:'Support Tickets', notifications:'Send Notification' };
+    document.getElementById('pageTitle').textContent = titles[name] || name;
+    document.querySelectorAll('.nav-link').forEach(l => {
+      if (l.getAttribute('onclick')?.includes("'"+name+"'")) l.classList.add('active');
+    });
+    if (name === 'investments' && window._loadInv) window._loadInv();
+  }
+</script>
+
+</body>
+</html>

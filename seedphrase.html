@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Save Your Seed Phrase – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f9fafb; }
+    .btn-primary { background: var(--maroon); color: #fff; transition: background .2s; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .word-box {
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .word-num { font-size: 11px; color: #9ca3af; font-weight: 700; min-width: 18px; }
+    .word-text { font-size: 14px; font-weight: 700; color: #111827; letter-spacing: 0.02em; }
+    .warning-box {
+      background: #fef3c7;
+      border: 1.5px solid #fbbf24;
+      border-radius: 16px;
+      padding: 16px 20px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4 py-12">
+
+  <div class="w-full max-w-lg">
+
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <a href="index.html" class="text-2xl font-black tracking-widest" style="color:var(--maroon)">AMG.</a>
+      <div class="mt-6">
+        <!-- Progress steps -->
+        <div class="flex items-center justify-center gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:var(--maroon)">✓</div>
+            <span class="text-xs font-semibold text-gray-400">Account</span>
+          </div>
+          <div class="w-8 h-px bg-gray-300"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:var(--maroon)">2</div>
+            <span class="text-xs font-semibold" style="color:var(--maroon)">Seed Phrase</span>
+          </div>
+          <div class="w-8 h-px bg-gray-300"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gray-200 text-gray-500">3</div>
+            <span class="text-xs font-semibold text-gray-400">Verify</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main card -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-8">
+
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:#fef3c7">
+          <svg class="w-7 h-7 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-black text-gray-900">Save Your Seed Phrase</h1>
+        <p class="mt-2 text-gray-500 text-sm max-w-sm mx-auto">
+          These 12 words are the only way to recover your account. Write them down in order and store them somewhere safe.
+        </p>
+      </div>
+
+      <!-- Warning -->
+      <div class="warning-box mb-6">
+        <div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <div class="text-sm text-yellow-800 font-medium leading-relaxed">
+            <strong>Never share these words with anyone.</strong> AMG support will never ask for your seed phrase. Anyone who asks for it is trying to steal your account.
+          </div>
+        </div>
+      </div>
+
+      <!-- Seed words grid -->
+      <div id="seedGrid" class="grid grid-cols-2 gap-3 mb-6">
+        <!-- Words injected by JS -->
+      </div>
+
+      <!-- Copy button -->
+      <button onclick="copyPhrase()" class="w-full py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 mb-6">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+        <span id="copyLabel">Copy all 12 words</span>
+      </button>
+
+      <!-- Confirm checkbox -->
+      <div class="flex items-start gap-3 mb-6 bg-gray-50 rounded-2xl p-4">
+        <input id="confirmSaved" type="checkbox" class="w-4 h-4 mt-0.5 accent-red-800 shrink-0" />
+        <label for="confirmSaved" class="text-sm text-gray-700 leading-relaxed font-medium">
+          I have written down all 12 words in the correct order and stored them in a safe place.
+        </label>
+      </div>
+
+      <div id="checkErr" class="hidden text-red-600 text-sm mb-4">Please confirm you have saved your seed phrase.</div>
+
+      <button onclick="goVerify()" class="btn-primary w-full py-4 rounded-xl font-semibold text-base">
+        I've Written It Down → Continue
+      </button>
+
+    </div>
+
+    <p class="text-center text-xs text-gray-400 mt-6">
+      Step 2 of 3 — Seed Phrase
+    </p>
+
+  </div>
+
+  <script>
+    // Load seed from sessionStorage
+    const seed = JSON.parse(sessionStorage.getItem('amg_seed') || '[]');
+
+    // If no seed (user navigated directly), redirect
+    if (!seed || seed.length !== 12) {
+      window.location.href = 'register.html';
+    }
+
+    // Render seed words
+    const grid = document.getElementById('seedGrid');
+    seed.forEach((word, i) => {
+      const div = document.createElement('div');
+      div.className = 'word-box';
+      div.innerHTML = `<span class="word-num">${String(i + 1).padStart(2, '0')}</span><span class="word-text">${word}</span>`;
+      grid.appendChild(div);
+    });
+
+    // Copy to clipboard
+    window.copyPhrase = function() {
+      const text = seed.map((w, i) => `${i + 1}. ${w}`).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        document.getElementById('copyLabel').textContent = '✓ Copied to clipboard!';
+        setTimeout(() => document.getElementById('copyLabel').textContent = 'Copy all 12 words', 2000);
+      });
+    }
+
+    // Continue to verify
+    window.goVerify = function() {
+      if (!document.getElementById('confirmSaved').checked) {
+        document.getElementById('checkErr').classList.remove('hidden');
+        return;
+      }
+      window.location.href = 'verify-seed.html';
+    }
+  </script>
+
+</body>
+</html>
