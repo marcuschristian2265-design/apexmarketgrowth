@@ -831,5 +831,154 @@
   }
 </script>
 
+<!-- ══════════════════════════════════════
+     SOCIAL PROOF NOTIFICATION POPUP
+══════════════════════════════════════ -->
+<div id="socialProof" style="
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  border: 1px solid #e5e7eb;
+  max-width: 300px;
+  animation: slideInLeft 0.5s ease;
+">
+  <!-- Icon -->
+  <div style="
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #059669;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  ">
+    <svg width="22" height="22" fill="none" stroke="#fff" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-3.866 0-7 1.79-7 4s3.134 4 7 4 7-1.79 7-4-3.134-4-7-4z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12v4c0 2.21 3.134 4 7 4s7-1.79 7-4v-4"/>
+    </svg>
+  </div>
+  <!-- Text -->
+  <div>
+    <div id="spText" style="font-family:'Poppins',sans-serif; font-size:13px; color:#111827; font-weight:500; line-height:1.5;">
+      Loading...
+    </div>
+    <div id="spTime" style="font-family:'Poppins',sans-serif; font-size:11px; color:#9ca3af; margin-top:2px;"></div>
+  </div>
+  <!-- Close button -->
+  <button onclick="document.getElementById('socialProof').style.display='none'" style="
+    position: absolute; top: 8px; right: 10px;
+    background: none; border: none; cursor: pointer;
+    color: #9ca3af; font-size: 16px; line-height: 1;
+    font-family: sans-serif;
+  ">×</button>
+</div>
+
+<style>
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-40px); }
+}
+</style>
+
+<script>
+(function() {
+  const firstNames = [
+    'Lindsey','James','Sofia','Michael','Amara','David','Emma','Carlos',
+    'Priya','Tyler','Fatima','Lucas','Olivia','Ahmed','Chloe','Nathan',
+    'Isabella','Ryan','Zara','Kevin','Aisha','Jordan','Maya','Dylan',
+    'Layla','Connor','Nadia','Marcus','Elena','Brandon','Yuki','Patrick',
+    'Serena','Felix','Diana','Oscar','Tanya','Victor','Rosa','Miles'
+  ];
+
+  const locations = [
+    'Henderson','New York','London','Toronto','Dubai','Sydney','Lagos',
+    'Paris','Atlanta','Chicago','Houston','Miami','Dallas','Phoenix',
+    'Seattle','Denver','Boston','Austin','Orlando','Berlin','Amsterdam',
+    'Singapore','Cape Town','Nairobi','Mumbai','Melbourne','Vancouver',
+    'Madrid','Rome','Tokyo','Seoul','Lisbon','Dublin','Oslo','Zurich'
+  ];
+
+  const actions = [
+    'just earned',
+    'just withdrew',
+    'just made a profit of',
+    'just received a return of',
+    'just cashed out',
+    'just gained'
+  ];
+
+  const times = [
+    '2 minutes ago','5 minutes ago','8 minutes ago','12 minutes ago',
+    '15 minutes ago','21 minutes ago','27 minutes ago','33 minutes ago',
+    'just now','1 minute ago','3 minutes ago','7 minutes ago'
+  ];
+
+  function getRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function getRandomAmount() {
+    // Between $5,000 and $70,000 in realistic increments
+    const amounts = [
+      5200, 6800, 7500, 8300, 9100, 10500, 11200, 12800, 14000,
+      15500, 17200, 18900, 20100, 22400, 24800, 26500, 28000,
+      30200, 32500, 35000, 37800, 40100, 42500, 45000, 47200,
+      50000, 52500, 55800, 58000, 61200, 63500, 65000, 67800, 70000
+    ];
+    return amounts[Math.floor(Math.random() * amounts.length)];
+  }
+
+  function formatAmount(n) {
+    return '$' + n.toLocaleString('en-US');
+  }
+
+  function showNotification() {
+    const name     = getRandom(firstNames);
+    const location = getRandom(locations);
+    const action   = getRandom(actions);
+    const amount   = getRandomAmount();
+    const time     = getRandom(times);
+
+    const popup  = document.getElementById('socialProof');
+    const text   = document.getElementById('spText');
+    const timeEl = document.getElementById('spTime');
+
+    // Build message with colored amount
+    text.innerHTML = `<strong>${name}</strong> from ${location} ${action} <span style="color:#059669;font-weight:700;">${formatAmount(amount)}</span>`;
+    timeEl.textContent = time;
+
+    // Reset animation
+    popup.style.animation = 'none';
+    popup.style.display = 'flex';
+    void popup.offsetWidth; // trigger reflow
+    popup.style.animation = 'slideInLeft 0.5s ease';
+
+    // Auto hide after 4 seconds
+    setTimeout(() => {
+      popup.style.animation = 'slideOutLeft 0.4s ease forwards';
+      setTimeout(() => {
+        popup.style.display = 'none';
+      }, 400);
+    }, 4000);
+  }
+
+  // Wait 3 seconds before first popup then show every 5 seconds
+  setTimeout(() => {
+    showNotification();
+    setInterval(showNotification, 5000);
+  }, 3000);
+})();
+</script>
+
 </body>
 </html>
