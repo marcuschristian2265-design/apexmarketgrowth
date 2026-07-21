@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Markets – ApexMarketGrowth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --maroon: #861535; --maroon-dark: #6d102b; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; background: #f3f4f6; }
+    .sidebar {
+      width: 260px; min-height: 100vh; background: #111827;
+      position: fixed; top: 0; left: 0; z-index: 40;
+      display: flex; flex-direction: column; transition: transform .3s ease;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; border-radius: 12px; margin: 2px 12px;
+      color: #9ca3af; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .2s; border: none; background: none;
+      width: calc(100% - 24px); text-align: left; text-decoration: none;
+    }
+    .nav-link:hover { background: #1f2937; color: #fff; }
+    .nav-link.active { background: var(--maroon); color: #fff; }
+    .nav-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .main { margin-left: 260px; min-height: 100vh; }
+    .topbar {
+      background: #fff; border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 30;
+    }
+    .stock-card {
+      background: #fff; border-radius: 16px; border: 1px solid #e5e7eb;
+      padding: 16px; cursor: pointer; transition: all .2s;
+    }
+    .stock-card:hover { box-shadow: 0 8px 25px rgba(134,21,53,.12); border-color: var(--maroon); transform: translateY(-2px); }
+    .modal { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+    .modal.open { display: flex; }
+    .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.65); }
+    .modal-box { position: relative; background: #fff; border-radius: 24px; width: 100%; max-width: 900px; z-index: 10; max-height: 90vh; overflow-y: auto; }
+    .tab-btn { padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; border: none; background: #f3f4f6; color: #6b7280; font-family: 'Poppins',sans-serif; }
+    .tab-btn.active { background: var(--maroon); color: #fff; }
+    .btn-primary { background: var(--maroon); color: #fff; border: none; cursor: pointer; transition: background .2s; border-radius: 12px; font-family: 'Poppins',sans-serif; font-weight: 600; }
+    .btn-primary:hover { background: var(--maroon-dark); }
+    .btn-success { background: #059669; color: #fff; border: none; cursor: pointer; border-radius: 12px; font-family: 'Poppins',sans-serif; font-weight: 600; }
+    .btn-danger { background: #dc2626; color: #fff; border: none; cursor: pointer; border-radius: 12px; font-family: 'Poppins',sans-serif; font-weight: 600; }
+    .search-input { border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 0 16px 0 42px; height: 46px; font-size: 14px; outline: none; font-family: 'Poppins',sans-serif; transition: border .2s; background: #fff; width: 100%; }
+    .search-input:focus { border-color: var(--maroon); }
+    .sector-btn { padding: 7px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1.5px solid #e5e7eb; background: #fff; color: #374151; transition: all .2s; white-space: nowrap; font-family: 'Poppins',sans-serif; }
+    .sector-btn.active { background: var(--maroon); color: #fff; border-color: var(--maroon); }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 39; }
+    .overlay.show { display: block; }
+    .ticker-wrap { overflow: hidden; background: #111827; padding: 8px 0; }
+    .ticker { display: flex; gap: 40px; animation: ticker 50s linear infinite; white-space: nowrap; }
+    .ticker:hover { animation-play-state: paused; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-260px); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="p-6 border-b border-gray-700">
+    <div class="text-2xl font-black tracking-widest text-white">AMG.</div>
+    <div class="text-xs text-gray-500 mt-1">Investment Platform</div>
+  </div>
+  <div class="px-5 py-4 border-b border-gray-700">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:var(--maroon)" id="sidebarAvatar">?</div>
+      <div>
+        <div class="text-sm font-bold text-white" id="sidebarName">Loading...</div>
+        <div class="text-xs text-gray-500" id="sidebarEmail">...</div>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 py-4 overflow-y-auto">
+    <div class="px-5 mb-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">Main Menu</div>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Overview
+    </a>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Deposit
+    </a>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+      Withdrawal
+    </a>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Select Plan
+    </a>
+    <button class="nav-link active">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Stock Markets
+    </button>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Transaction History
+    </a>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Copy Trading
+    </a>
+    <a href="support.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      Support
+    </a>
+    <div class="px-5 mt-4 mb-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">Account</div>
+    <a href="user-dashboard.html" class="nav-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Settings
+    </a>
+    <button class="nav-link" style="color:#f87171" onclick="handleLogout()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Log Out
+    </button>
+  </nav>
+  <div class="p-5 border-t border-gray-700">
+    <div class="text-xs text-gray-500 font-semibold">Available Balance</div>
+    <div class="text-xl font-black text-white mt-1" id="sidebarBalance">$0.00</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleSidebar()" class="p-2 rounded-xl hover:bg-gray-100">
+        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div>
+        <div class="text-sm font-bold text-gray-900">Stock Markets</div>
+        <div class="text-xs text-gray-400" id="pageDate"></div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-right hidden sm:block">
+        <div class="text-xs text-gray-500">Balance</div>
+        <div class="text-sm font-black text-gray-900" id="topbarBalance">$0.00</div>
+      </div>
+      <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:var(--maroon)" id="topbarAvatar">?</div>
+    </div>
+  </div>
+
+  <!-- Live Ticker -->
+  <div class="ticker-wrap">
+    <div class="ticker text-xs font-semibold text-white px-6" id="tickerContent"></div>
+  </div>
+
+  <!-- TradingView Tape -->
+  <div class="bg-white border-b border-gray-100">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {"symbols":[{"proName":"NASDAQ:AAPL","title":"Apple"},{"proName":"NASDAQ:MSFT","title":"Microsoft"},{"proName":"NASDAQ:GOOGL","title":"Google"},{"proName":"NASDAQ:TSLA","title":"Tesla"},{"proName":"NASDAQ:NVDA","title":"NVIDIA"},{"proName":"NASDAQ:META","title":"Meta"},{"proName":"NASDAQ:AMZN","title":"Amazon"},{"proName":"NYSE:JPM","title":"JPMorgan"},{"proName":"NYSE:XOM","title":"ExxonMobil"},{"proName":"NYSE:JNJ","title":"J&J"}],"showSymbolLogo":true,"isTransparent":false,"displayMode":"adaptive","colorTheme":"light","locale":"en"}
+      </script>
+    </div>
+  </div>
+
+  <div class="p-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-gray-900">US Stock Markets</h2>
+        <p class="text-gray-500 text-sm mt-1">Browse 55 live US stocks. Click any stock to view live chart, details and invest.</p>
+      </div>
+      <div class="flex items-center gap-2 text-xs font-semibold">
+        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+        <span class="text-gray-500">Live data via TradingView</span>
+      </div>
+    </div>
+
+    <!-- Search + Sort -->
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
+      <div class="flex flex-col md:flex-row gap-4">
+        <div class="relative flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="stockSearch" class="search-input" placeholder="Search by name or ticker..." oninput="filterStocks()" />
+        </div>
+        <select id="sortSelect" onchange="filterStocks()" style="border:1.5px solid #e5e7eb;border-radius:12px;padding:0 16px;height:46px;font-size:14px;outline:none;font-family:'Poppins',sans-serif;background:#fff;cursor:pointer">
+          <option value="default">Sort: Default</option>
+          <option value="gain">Top Gainers</option>
+          <option value="loss">Top Losers</option>
+          <option value="alpha">A–Z</option>
+        </select>
+      </div>
+      <!-- Sectors -->
+      <div class="flex gap-2 flex-wrap mt-4">
+        <button class="sector-btn active" onclick="setSector('all',this)">All</button>
+        <button class="sector-btn" onclick="setSector('Technology',this)">Technology</button>
+        <button class="sector-btn" onclick="setSector('Finance',this)">Finance</button>
+        <button class="sector-btn" onclick="setSector('Healthcare',this)">Healthcare</button>
+        <button class="sector-btn" onclick="setSector('Energy',this)">Energy</button>
+        <button class="sector-btn" onclick="setSector('Consumer',this)">Consumer</button>
+        <button class="sector-btn" onclick="setSector('Industrial',this)">Industrial</button>
+        <button class="sector-btn" onclick="setSector('Telecom',this)">Telecom</button>
+        <button class="sector-btn" onclick="setSector('Real Estate',this)">Real Estate</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Total Stocks</div>
+        <div class="text-2xl font-black text-gray-900 mt-1" id="totalCount">55</div>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Gainers</div>
+        <div class="text-2xl font-black text-green-600 mt-1" id="gainersCount">—</div>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Losers</div>
+        <div class="text-2xl font-black text-red-600 mt-1" id="losersCount">—</div>
+      </div>
+      <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Market</div>
+        <div class="text-2xl font-black mt-1" id="marketStatus">—</div>
+      </div>
+    </div>
+
+    <!-- Stock Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="stockGrid"></div>
+
+  </div>
+</div>
+
+<!-- STOCK MODAL -->
+<div class="modal" id="stockModal">
+  <div class="modal-overlay" onclick="closeStockModal()"></div>
+  <div class="modal-box">
+    <!-- Modal header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-wrap gap-3">
+      <div class="flex items-center gap-4">
+        <div id="modalLogo" class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm" style="background:var(--maroon)"></div>
+        <div>
+          <div class="text-xl font-black text-gray-900" id="modalName"></div>
+          <div class="text-sm text-gray-500" id="modalTicker"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-2xl font-black text-gray-900" id="modalPrice"></div>
+          <span id="modalChange" class="text-sm font-bold px-2 py-0.5 rounded-full inline-block mt-1"></span>
+        </div>
+        <button onclick="closeStockModal()" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">×</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 p-4 border-b border-gray-100 flex-wrap">
+      <button class="tab-btn active" onclick="switchTab('chart',this)">📈 Live Chart</button>
+      <button class="tab-btn" onclick="switchTab('info',this)">ℹ️ Info</button>
+      <button class="tab-btn" onclick="switchTab('buy',this)">💰 Buy</button>
+      <button class="tab-btn" onclick="switchTab('sell',this)">📤 Sell</button>
+    </div>
+
+    <!-- Chart tab -->
+    <div id="tab-chart" class="p-4">
+      <div id="tv-chart-container" style="height:420px;border-radius:16px;overflow:hidden"></div>
+    </div>
+
+    <!-- Info tab -->
+    <div id="tab-info" class="hidden p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="bg-gray-50 rounded-2xl p-4">
+          <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Key Statistics</div>
+          <div class="space-y-2" id="keyStats"></div>
+        </div>
+        <div class="bg-gray-50 rounded-2xl p-4">
+          <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">Company Info</div>
+          <div class="space-y-2" id="companyInfo"></div>
+        </div>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 mb-4">
+        <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">About</div>
+        <p id="stockAbout" class="text-sm text-gray-600 leading-relaxed"></p>
+      </div>
+      <button onclick="switchTab('buy',document.querySelectorAll('.tab-btn')[2])" class="btn-success w-full py-3 text-sm">Buy This Stock →</button>
+    </div>
+
+    <!-- Buy tab -->
+    <div id="tab-buy" class="hidden p-6">
+      <div class="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+        <div class="text-sm font-bold text-green-800">📈 You are buying:</div>
+        <div class="text-lg font-black text-green-900 mt-1" id="buyStockName"></div>
+        <div class="text-sm text-green-700 mt-1">Current price: <span id="buyCurrentPrice" class="font-bold"></span></div>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+        <div class="text-sm font-semibold text-blue-800 leading-relaxed">
+          💡 To invest in this stock, choose one of our investment plans below. Your ROI is calculated based on the plan duration and rate. Click <strong>Proceed to Plans</strong> to select your amount.
+        </div>
+      </div>
+      <div class="text-sm font-bold text-gray-700 mb-3">Available Investment Plans:</div>
+      <div class="space-y-3 mb-5" id="buyPlansList"></div>
+      <button onclick="proceedToBuy()" class="btn-success w-full py-4 text-base">Proceed to Investment Plans →</button>
+    </div>
+
+    <!-- Sell tab -->
+    <div id="tab-sell" class="hidden p-6">
+      <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
+        <div class="text-sm font-bold text-red-800">📤 Sell Position:</div>
+        <div class="text-lg font-black text-red-900 mt-1" id="sellStockName"></div>
+        <div class="text-sm text-red-700 mt-1">Withdrawal processed within 24–48 hours after admin review.</div>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 mb-4">
+        <div class="text-sm font-semibold text-gray-700">Your Available Balance</div>
+        <div class="text-2xl font-black text-gray-900 mt-1" id="sellBalance">$0.00</div>
+      </div>
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-2">Amount (USD)</label>
+          <input type="number" id="sellAmount" placeholder="Enter amount to sell" style="width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:0 16px;height:50px;font-size:14px;outline:none;font-family:'Poppins',sans-serif" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-2">Your Wallet Address</label>
+          <input type="text" id="sellWallet" placeholder="Your crypto wallet address" style="width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:0 16px;height:50px;font-size:14px;outline:none;font-family:'Poppins',sans-serif" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-2">Cryptocurrency</label>
+          <select id="sellCrypto" style="width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:0 16px;height:50px;font-size:14px;outline:none;font-family:'Poppins',sans-serif;background:#fff">
+            <option>BTC</option><option>ETH</option><option>USDT</option><option>BNB</option><option>LTC</option>
+          </select>
+        </div>
+      </div>
+      <div id="sellMsg" class="hidden rounded-xl px-4 py-3 text-sm mb-4"></div>
+      <button onclick="submitSell()" class="btn-danger w-full py-4 text-base">Submit Sell Request</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrwqA-_CK-22E7PsNlSAIw-bXWN6Dl-mU",
+    authDomain: "apexmarketgrowth.firebaseapp.com",
+    projectId: "apexmarketgrowth",
+    storageBucket: "apexmarketgrowth.firebasestorage.app",
+    messagingSenderId: "81223871224",
+    appId: "1:81223871224:web:1cf05fadc6e24f90aee90d"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  let currentUser = null, userData = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    currentUser = user;
+    const snap = await getDoc(doc(db,'users',user.uid));
+    if (snap.exists()) {
+      userData = snap.data();
+      const name = userData.fullName || 'User';
+      const bal  = '$'+(userData.balance||0).toLocaleString('en-US',{minimumFractionDigits:2});
+      const init = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      document.getElementById('sidebarName').textContent    = name;
+      document.getElementById('sidebarEmail').textContent   = userData.email||'';
+      document.getElementById('sidebarBalance').textContent = bal;
+      document.getElementById('topbarBalance').textContent  = bal;
+      document.getElementById('sidebarAvatar').textContent  = init;
+      document.getElementById('topbarAvatar').textContent   = init;
+      document.getElementById('sellBalance').textContent    = bal;
+    }
+  });
+
+  window.handleLogout = async function() {
+    if (confirm('Log out?')) { await signOut(auth); window.location.href = 'login.html'; }
+  }
+
+  window.submitSell = async function() {
+    const amount = document.getElementById('sellAmount').value;
+    const wallet = document.getElementById('sellWallet').value.trim();
+    const crypto = document.getElementById('sellCrypto').value;
+    const msgEl  = document.getElementById('sellMsg');
+    msgEl.classList.add('hidden');
+    if (!amount || Number(amount) < 50) {
+      msgEl.textContent='Minimum sell is $50.';
+      msgEl.className='bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4';
+      msgEl.classList.remove('hidden'); return;
+    }
+    if (!wallet) {
+      msgEl.textContent='Please enter your wallet address.';
+      msgEl.className='bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4';
+      msgEl.classList.remove('hidden'); return;
+    }
+    try {
+      await addDoc(collection(db,'withdrawals'), {
+        userId: currentUser.uid, userEmail: currentUser.email,
+        userName: userData?.fullName||'', amount: Number(amount),
+        crypto, wallet, notes:'Stock sell request', status:'pending', createdAt: serverTimestamp()
+      });
+      msgEl.textContent='Sell request submitted! Processing within 24–48 hours.';
+      msgEl.className='bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mb-4';
+      msgEl.classList.remove('hidden');
+      document.getElementById('sellAmount').value='';
+      document.getElementById('sellWallet').value='';
+    } catch(e) {
+      msgEl.textContent='Error. Please try again.';
+      msgEl.className='bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4';
+      msgEl.classList.remove('hidden');
+    }
+  }
+</script>
+
+<script>
+// ── 55 US Stocks ──
+const stocks = [
+  {ticker:'AAPL', name:'Apple Inc.',             sector:'Technology',  change:+1.24, price:189.30, cap:'$2.94T', pe:29.1, vol:'58.2M', high52:199.62, low52:164.08, exchange:'NASDAQ', about:'Apple designs and manufactures smartphones, personal computers, tablets, wearables and accessories worldwide. Known for iPhone, Mac, iPad and Apple Watch.'},
+  {ticker:'MSFT', name:'Microsoft Corp.',         sector:'Technology',  change:+0.87, price:415.20, cap:'$3.08T', pe:36.2, vol:'22.1M', high52:468.35, low52:362.90, exchange:'NASDAQ', about:'Microsoft develops and supports software, services, devices and solutions worldwide including Windows, Azure cloud platform, and Office 365.'},
+  {ticker:'GOOGL',name:'Alphabet Inc.',           sector:'Technology',  change:-0.53, price:175.84, cap:'$2.18T', pe:24.8, vol:'25.4M', high52:207.05, low52:155.60, exchange:'NASDAQ', about:'Alphabet is the parent company of Google, offering search, advertising, cloud computing, YouTube, and AI products globally.'},
+  {ticker:'NVDA', name:'NVIDIA Corporation',      sector:'Technology',  change:+3.21, price:875.40, cap:'$2.15T', pe:68.4, vol:'41.8M', high52:974.00, low52:462.52, exchange:'NASDAQ', about:'NVIDIA designs GPUs and system-on-chip units for AI, gaming, autonomous vehicles and data centers. Leader in AI computing hardware.'},
+  {ticker:'META', name:'Meta Platforms Inc.',     sector:'Technology',  change:+1.65, price:502.30, cap:'$1.27T', pe:27.3, vol:'14.2M', high52:589.45, low52:390.12, exchange:'NASDAQ', about:'Meta owns Facebook, Instagram, WhatsApp and Threads. Investing heavily in AI and the metaverse through Reality Labs.'},
+  {ticker:'AMZN', name:'Amazon.com Inc.',         sector:'Technology',  change:+0.92, price:185.70, cap:'$1.94T', pe:43.5, vol:'35.6M', high52:201.20, low52:151.61, exchange:'NASDAQ', about:'Amazon is the world largest e-commerce retailer and cloud provider through AWS, serving millions of customers globally.'},
+  {ticker:'TSLA', name:'Tesla Inc.',              sector:'Technology',  change:-2.14, price:248.50, cap:'$792B',  pe:52.1, vol:'89.3M', high52:299.29, low52:138.80, exchange:'NASDAQ', about:'Tesla designs and manufactures electric vehicles, energy storage systems and solar products. Leading EV manufacturer globally.'},
+  {ticker:'ORCL', name:'Oracle Corporation',      sector:'Technology',  change:+1.08, price:128.40, cap:'$356B',  pe:31.2, vol:'9.8M',  high52:167.87, low52:99.26,  exchange:'NYSE',   about:'Oracle provides cloud services, database solutions and enterprise software. Known for its cloud ERP and database products.'},
+  {ticker:'CRM',  name:'Salesforce Inc.',         sector:'Technology',  change:-0.74, price:275.60, cap:'$268B',  pe:44.8, vol:'6.2M',  high52:318.71, low52:212.00, exchange:'NYSE',   about:'Salesforce provides CRM software and enterprise cloud applications for sales, service, marketing and analytics.'},
+  {ticker:'ADBE', name:'Adobe Inc.',              sector:'Technology',  change:+0.45, price:510.20, cap:'$225B',  pe:38.9, vol:'3.4M',  high52:587.75, low52:433.95, exchange:'NASDAQ', about:'Adobe provides creative software including Photoshop, Premiere Pro, Acrobat and cloud digital marketing solutions.'},
+  {ticker:'INTC', name:'Intel Corporation',       sector:'Technology',  change:-1.32, price:31.45,  cap:'$133B',  pe:12.4, vol:'47.5M', high52:51.28,  low52:18.51,  exchange:'NASDAQ', about:'Intel designs and manufactures microprocessors and semiconductor products powering PCs, servers and data centers.'},
+  {ticker:'AMD',  name:'Advanced Micro Devices',  sector:'Technology',  change:+2.18, price:162.30, cap:'$262B',  pe:55.7, vol:'38.9M', high52:227.30, low52:121.81, exchange:'NASDAQ', about:'AMD designs high-performance CPUs and GPUs for data centers, gaming, embedded and semi-custom markets.'},
+  {ticker:'NFLX', name:'Netflix Inc.',            sector:'Technology',  change:+1.74, price:628.50, cap:'$271B',  pe:43.2, vol:'5.8M',  high52:700.99, low52:476.26, exchange:'NASDAQ', about:'Netflix is a streaming entertainment service with over 260 million paid memberships in 190 countries.'},
+  {ticker:'UBER', name:'Uber Technologies',       sector:'Technology',  change:+0.62, price:76.80,  cap:'$161B',  pe:28.4, vol:'18.7M', high52:87.00,  low52:56.81,  exchange:'NYSE',   about:'Uber operates ridesharing, food delivery, freight and other mobility platforms across 70+ countries.'},
+  {ticker:'PYPL', name:'PayPal Holdings',         sector:'Technology',  change:-0.88, price:65.20,  cap:'$70B',   pe:16.8, vol:'12.1M', high52:81.73,  low52:56.82,  exchange:'NASDAQ', about:'PayPal operates a digital payments platform enabling payments and money transfers in 200+ markets.'},
+  {ticker:'JPM',  name:'JPMorgan Chase',          sector:'Finance',     change:+0.54, price:198.70, cap:'$573B',  pe:11.8, vol:'8.4M',  high52:223.42, low52:178.00, exchange:'NYSE',   about:'JPMorgan Chase is the largest US bank by assets, offering investment banking, retail banking and asset management.'},
+  {ticker:'BAC',  name:'Bank of America',         sector:'Finance',     change:-0.31, price:38.90,  cap:'$300B',  pe:12.1, vol:'35.2M', high52:44.44,  low52:29.24,  exchange:'NYSE',   about:'Bank of America is a leading multinational investment bank and financial services holding company.'},
+  {ticker:'GS',   name:'Goldman Sachs Group',     sector:'Finance',     change:+1.12, price:468.20, cap:'$152B',  pe:14.2, vol:'2.8M',  high52:543.54, low52:391.41, exchange:'NYSE',   about:'Goldman Sachs is a leading global investment banking, securities and investment management firm.'},
+  {ticker:'MS',   name:'Morgan Stanley',          sector:'Finance',     change:+0.78, price:96.40,  cap:'$158B',  pe:16.4, vol:'9.1M',  high52:109.73, low52:82.10,  exchange:'NYSE',   about:'Morgan Stanley provides investment banking, wealth management and investment management services globally.'},
+  {ticker:'WFC',  name:'Wells Fargo',             sector:'Finance',     change:-0.45, price:57.30,  cap:'$206B',  pe:13.6, vol:'18.3M', high52:67.61,  low52:39.88,  exchange:'NYSE',   about:'Wells Fargo provides banking, investment, mortgage and consumer finance products and services.'},
+  {ticker:'V',    name:'Visa Inc.',               sector:'Finance',     change:+0.93, price:275.40, cap:'$561B',  pe:30.2, vol:'6.7M',  high52:290.96, low52:230.40, exchange:'NYSE',   about:'Visa operates the world largest retail electronic payments network connecting consumers and businesses.'},
+  {ticker:'MA',   name:'Mastercard Inc.',         sector:'Finance',     change:+0.82, price:462.80, cap:'$432B',  pe:33.8, vol:'3.2M',  high52:490.00, low52:388.63, exchange:'NYSE',   about:'Mastercard is a global technology company in the payments industry connecting people to priceless possibilities.'},
+  {ticker:'AXP',  name:'American Express',        sector:'Finance',     change:+0.67, price:228.50, cap:'$163B',  pe:19.4, vol:'3.5M',  high52:264.80, low52:179.10, exchange:'NYSE',   about:'American Express provides charge and credit cards, travel services and financial products globally.'},
+  {ticker:'BLK',  name:'BlackRock Inc.',          sector:'Finance',     change:+1.23, price:810.30, cap:'$122B',  pe:22.1, vol:'0.7M',  high52:1028.31,low52:696.50, exchange:'NYSE',   about:'BlackRock is the world largest asset manager with over $10 trillion AUM across equity, fixed income and alternatives.'},
+  {ticker:'JNJ',  name:'Johnson & Johnson',       sector:'Healthcare',  change:-0.21, price:147.80, cap:'$354B',  pe:15.2, vol:'7.8M',  high52:168.85, low52:143.11, exchange:'NYSE',   about:'Johnson & Johnson develops and manufactures pharmaceutical products, medical devices and consumer health products.'},
+  {ticker:'PFE',  name:'Pfizer Inc.',             sector:'Healthcare',  change:-0.87, price:28.40,  cap:'$161B',  pe:10.8, vol:'28.4M', high52:37.52,  low52:25.20,  exchange:'NYSE',   about:'Pfizer discovers, develops and manufactures biopharmaceutical products including vaccines and oncology treatments.'},
+  {ticker:'UNH',  name:'UnitedHealth Group',      sector:'Healthcare',  change:+1.45, price:518.20, cap:'$476B',  pe:20.4, vol:'3.2M',  high52:600.72, low52:430.80, exchange:'NYSE',   about:'UnitedHealth Group provides health insurance plans and health services through UnitedHealthcare and Optum.'},
+  {ticker:'ABBV', name:'AbbVie Inc.',             sector:'Healthcare',  change:+0.54, price:172.40, cap:'$303B',  pe:48.2, vol:'5.6M',  high52:189.10, low52:134.19, exchange:'NYSE',   about:'AbbVie is a pharmaceutical company focused on immunology, oncology, neuroscience and aesthetics.'},
+  {ticker:'MRK',  name:'Merck & Co.',             sector:'Healthcare',  change:+0.38, price:128.90, cap:'$327B',  pe:16.8, vol:'8.9M',  high52:134.63, low52:101.92, exchange:'NYSE',   about:'Merck develops prescription medicines, vaccines and animal health products for patients worldwide.'},
+  {ticker:'LLY',  name:'Eli Lilly & Co.',         sector:'Healthcare',  change:+2.31, price:842.60, cap:'$800B',  pe:112.4,vol:'2.8M',  high52:972.53, low52:627.57, exchange:'NYSE',   about:'Eli Lilly manufactures medicines for diabetes, obesity, oncology and immunology including Ozempic competitor Mounjaro.'},
+  {ticker:'TMO',  name:'Thermo Fisher Scientific',sector:'Healthcare',  change:+0.65, price:578.40, cap:'$223B',  pe:28.4, vol:'1.9M',  high52:627.86, low52:448.22, exchange:'NYSE',   about:'Thermo Fisher provides analytical instruments, reagents, consumables, software and services for research and diagnostics.'},
+  {ticker:'XOM',  name:'ExxonMobil Corp.',        sector:'Energy',      change:-0.42, price:112.30, cap:'$449B',  pe:13.4, vol:'14.2M', high52:123.75, low52:96.44,  exchange:'NYSE',   about:'ExxonMobil explores, produces, refines and sells petroleum and petrochemical products. World largest oil company.'},
+  {ticker:'CVX',  name:'Chevron Corporation',     sector:'Energy',      change:-0.28, price:158.40, cap:'$294B',  pe:13.8, vol:'8.7M',  high52:172.52, low52:139.62, exchange:'NYSE',   about:'Chevron engages in integrated energy and chemicals operations including oil production, refining and distribution.'},
+  {ticker:'COP',  name:'ConocoPhillips',          sector:'Energy',      change:-0.61, price:118.70, cap:'$148B',  pe:12.8, vol:'7.3M',  high52:137.75, low52:102.39, exchange:'NYSE',   about:'ConocoPhillips explores, produces, transports and markets crude oil, natural gas and liquefied natural gas.'},
+  {ticker:'SLB',  name:'SLB (Schlumberger)',      sector:'Energy',      change:-0.84, price:44.20,  cap:'$63B',   pe:14.2, vol:'12.8M', high52:57.62,  low52:37.45,  exchange:'NYSE',   about:'SLB is a global technology company driving energy innovation for a balanced planet through oilfield services.'},
+  {ticker:'WMT',  name:'Walmart Inc.',            sector:'Consumer',    change:+0.34, price:68.40,  cap:'$549B',  pe:34.8, vol:'12.4M', high52:74.27,  low52:51.29,  exchange:'NYSE',   about:'Walmart operates supercenters, discount stores and membership warehouse clubs in the US and internationally.'},
+  {ticker:'HD',   name:'Home Depot Inc.',         sector:'Consumer',    change:+0.78, price:348.20, cap:'$346B',  pe:22.4, vol:'4.1M',  high52:395.97, low52:286.00, exchange:'NYSE',   about:'Home Depot is the world largest home improvement retailer operating over 2,300 stores in North America.'},
+  {ticker:'MCD',  name:"McDonald's Corp.",        sector:'Consumer',    change:+0.42, price:285.40, cap:'$208B',  pe:23.8, vol:'3.2M',  high52:317.90, low52:243.48, exchange:'NYSE',   about:"McDonald's operates and franchises fast food restaurants serving 69 million customers daily in 100+ countries."},
+  {ticker:'COST', name:'Costco Wholesale',        sector:'Consumer',    change:+1.12, price:878.40, cap:'$389B',  pe:52.4, vol:'2.1M',  high52:1007.33,low52:651.54, exchange:'NASDAQ', about:'Costco operates membership warehouses offering branded and private-label products at low prices globally.'},
+  {ticker:'NKE',  name:'Nike Inc.',               sector:'Consumer',    change:-1.24, price:88.40,  cap:'$134B',  pe:24.8, vol:'8.9M',  high52:123.25, low52:70.75,  exchange:'NYSE',   about:'Nike designs, develops and markets athletic footwear, apparel, equipment and accessories worldwide.'},
+  {ticker:'SBUX', name:'Starbucks Corp.',         sector:'Consumer',    change:-0.54, price:78.20,  cap:'$89B',   pe:22.4, vol:'9.8M',  high52:107.66, low52:71.07,  exchange:'NASDAQ', about:'Starbucks operates coffee shops and sells premium coffees, teas and food products globally.'},
+  {ticker:'TGT',  name:'Target Corporation',      sector:'Consumer',    change:+0.87, price:158.40, cap:'$73B',   pe:16.2, vol:'5.8M',  high52:181.86, low52:102.27, exchange:'NYSE',   about:'Target operates general merchandise retail stores offering owned-brand and national-brand products.'},
+  {ticker:'BA',   name:'Boeing Company',          sector:'Industrial',  change:-1.54, price:188.40, cap:'$117B',  pe:null, vol:'9.2M',  high52:267.54, low52:159.70, exchange:'NYSE',   about:'Boeing designs, manufactures and sells commercial jetliners, military aircraft, satellites and defense systems.'},
+  {ticker:'CAT',  name:'Caterpillar Inc.',        sector:'Industrial',  change:+0.92, price:348.70, cap:'$169B',  pe:15.8, vol:'2.8M',  high52:418.00, low52:274.06, exchange:'NYSE',   about:'Caterpillar manufactures construction and mining equipment, diesel engines, and industrial gas turbines.'},
+  {ticker:'GE',   name:'GE Aerospace',            sector:'Industrial',  change:+1.34, price:168.40, cap:'$182B',  pe:28.4, vol:'5.6M',  high52:198.67, low52:103.55, exchange:'NYSE',   about:'GE Aerospace designs and produces commercial and military aircraft engines and propulsion systems globally.'},
+  {ticker:'HON',  name:'Honeywell Intl.',         sector:'Industrial',  change:+0.45, price:198.40, cap:'$128B',  pe:22.4, vol:'3.2M',  high52:228.86, low52:183.19, exchange:'NASDAQ', about:'Honeywell is a diversified technology and manufacturing company with aerospace, building and performance materials.'},
+  {ticker:'UPS',  name:'United Parcel Service',   sector:'Industrial',  change:-0.38, price:128.40, cap:'$110B',  pe:18.4, vol:'4.8M',  high52:172.93, low52:118.25, exchange:'NYSE',   about:'UPS provides logistics, package delivery and supply chain management services in 220+ countries.'},
+  {ticker:'T',    name:'AT&T Inc.',               sector:'Telecom',     change:-0.24, price:18.40,  cap:'$131B',  pe:8.4,  vol:'42.8M', high52:22.15,  low52:14.95,  exchange:'NYSE',   about:'AT&T provides telecommunications, media, and technology services including wireless, broadband and TV.'},
+  {ticker:'VZ',   name:'Verizon Communications',  sector:'Telecom',     change:-0.18, price:40.20,  cap:'$169B',  pe:15.4, vol:'22.4M', high52:45.10,  low52:35.21,  exchange:'NYSE',   about:'Verizon is one of the largest US wireless carriers providing consumer and business telecom services.'},
+  {ticker:'TMUS', name:'T-Mobile US Inc.',        sector:'Telecom',     change:+0.64, price:198.40, cap:'$233B',  pe:24.8, vol:'5.2M',  high52:210.00, low52:150.61, exchange:'NASDAQ', about:'T-Mobile is the second largest US wireless carrier offering 5G services to consumers and businesses.'},
+  {ticker:'DIS',  name:'Walt Disney Company',     sector:'Consumer',    change:+0.48, price:98.40,  cap:'$178B',  pe:32.4, vol:'10.2M', high52:123.74, low52:83.91,  exchange:'NYSE',   about:'Disney operates theme parks, film studios, TV networks and streaming platforms including Disney+ globally.'},
+  {ticker:'AMT',  name:'American Tower Corp.',    sector:'Real Estate', change:+0.84, price:188.40, cap:'$87B',   pe:38.4, vol:'2.8M',  high52:229.00, low52:154.58, exchange:'NYSE',   about:'American Tower is a REIT owning wireless and broadcast communications infrastructure globally.'},
+  {ticker:'PLD',  name:'Prologis Inc.',           sector:'Real Estate', change:+0.52, price:108.40, cap:'$98B',   pe:28.4, vol:'4.2M',  high52:138.20, low52:96.14,  exchange:'NYSE',   about:'Prologis is the global leader in logistics real estate focusing on high-barrier, high-growth markets.'},
+  {ticker:'EQIX', name:'Equinix Inc.',            sector:'Real Estate', change:+0.74, price:788.40, cap:'$74B',   pe:78.4, vol:'0.8M',  high52:918.00, low52:697.24, exchange:'NASDAQ', about:'Equinix is the world digital infrastructure company operating 240+ data centers in 70+ countries.'},
+  {ticker:'COIN', name:'Coinbase Global',         sector:'Finance',     change:+4.28, price:228.40, cap:'$58B',   pe:42.4, vol:'15.8M', high52:349.75, low52:119.31, exchange:'NASDAQ', about:'Coinbase operates a leading cryptocurrency exchange and financial infrastructure for the cryptoeconomy.'},
+];
+
+const sectorColors = {
+  Technology:'#1e40af', Finance:'#065f46', Healthcare:'#7c2d12',
+  Energy:'#92400e', Consumer:'#4c1d95', Industrial:'#1e3a5f',
+  Telecom:'#374151', 'Real Estate':'#831843'
+};
+
+let currentSector = 'all';
+let currentStock  = null;
+
+function renderStocks(list) {
+  const grid = document.getElementById('stockGrid');
+  document.getElementById('gainersCount').textContent = list.filter(s=>s.change>0).length;
+  document.getElementById('losersCount').textContent  = list.filter(s=>s.change<0).length;
+  document.getElementById('totalCount').textContent   = list.length;
+
+  // Market status
+  const now = new Date();
+  const est = new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const h=est.getHours(), m=est.getMinutes(), d=est.getDay();
+  const open = d>=1&&d<=5&&(h>9||(h===9&&m>=30))&&h<16;
+  const mEl = document.getElementById('marketStatus');
+  mEl.textContent = open?'Open':'Closed';
+  mEl.style.color = open?'#059669':'#dc2626';
+
+  // Ticker
+  const t = document.getElementById('tickerContent');
+  const tHtml = list.slice(0,25).map(s=>`<span style="color:${s.change>=0?'#4ade80':'#f87171'};margin-right:32px">${s.ticker} $${s.price.toLocaleString()} ${s.change>=0?'▲':'▼'}${Math.abs(s.change).toFixed(2)}%</span>`).join('');
+  t.innerHTML = tHtml + tHtml;
+
+  if (!list.length) {
+    grid.innerHTML='<div class="col-span-4 text-center py-16 text-gray-400 text-sm">No stocks found.</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(s => {
+    const up=s.change>=0;
+    const col=up?'#059669':'#dc2626';
+    const bg=up?'#d1fae5':'#fee2e2';
+    return `
+    <div class="stock-card" onclick="openStock('${s.ticker}')">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shrink-0" style="background:${sectorColors[s.sector]||'#374151'}">${s.ticker.slice(0,3)}</div>
+          <div>
+            <div class="font-black text-gray-900 text-sm">${s.ticker}</div>
+            <div class="text-xs text-gray-400">${s.sector}</div>
+          </div>
+        </div>
+        <span style="background:${bg};color:${col};padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700">${up?'▲':'▼'} ${Math.abs(s.change).toFixed(2)}%</span>
+      </div>
+      <div class="text-sm font-medium text-gray-600 truncate mb-3">${s.name}</div>
+      <div class="flex items-center justify-between">
+        <div class="text-xl font-black text-gray-900">$${s.price.toLocaleString()}</div>
+        <button class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white btn-primary" onclick="event.stopPropagation();openStock('${s.ticker}');setTimeout(()=>switchTab('buy',document.querySelectorAll('.tab-btn')[2]),400)">Buy</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.filterStocks = function() {
+  const q    = document.getElementById('stockSearch').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+  let list = [...stocks];
+  if (currentSector !== 'all') list = list.filter(s=>s.sector===currentSector);
+  if (q) list = list.filter(s=>s.name.toLowerCase().includes(q)||s.ticker.toLowerCase().includes(q));
+  if (sort==='gain') list.sort((a,b)=>b.change-a.change);
+  else if (sort==='loss') list.sort((a,b)=>a.change-b.change);
+  else if (sort==='alpha') list.sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  renderStocks(list);
+}
+
+window.setSector = function(s,btn) {
+  currentSector=s;
+  document.querySelectorAll('.sector-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterStocks();
+}
+
+window.openStock = function(ticker) {
+  const s = stocks.find(x=>x.ticker===ticker);
+  if (!s) return;
+  currentStock = s;
+  const up=s.change>=0, col=up?'#059669':'#dc2626';
+
+  document.getElementById('modalLogo').textContent      = s.ticker.slice(0,3);
+  document.getElementById('modalLogo').style.background = sectorColors[s.sector]||'#374151';
+  document.getElementById('modalName').textContent      = s.name;
+  document.getElementById('modalTicker').textContent    = `${s.ticker} · ${s.exchange} · ${s.sector}`;
+  document.getElementById('modalPrice').textContent     = '$'+s.price.toLocaleString();
+  document.getElementById('modalChange').textContent    = `${up?'▲':'▼'} ${Math.abs(s.change).toFixed(2)}%`;
+  document.getElementById('modalChange').style.cssText  = `background:${up?'#d1fae5':'#fee2e2'};color:${col};padding:3px 10px;border-radius:999px`;
+  document.getElementById('buyStockName').textContent   = s.name;
+  document.getElementById('buyCurrentPrice').textContent= '$'+s.price.toLocaleString();
+  document.getElementById('sellStockName').textContent  = s.name;
+
+  document.getElementById('keyStats').innerHTML = [
+    ['Market Cap', s.cap],
+    ['P/E Ratio', s.pe||'N/A'],
+    ['Volume', s.vol],
+    ['52W High', '$'+s.high52],
+    ['52W Low', '$'+s.low52],
+    ["Today's Change", `${up?'+':''}${s.change}%`],
+  ].map(([k,v])=>`<div class="flex justify-between text-sm"><span class="text-gray-500">${k}</span><span class="font-bold">${v}</span></div>`).join('');
+
+  document.getElementById('companyInfo').innerHTML = [
+    ['Ticker', s.ticker],
+    ['Exchange', s.exchange],
+    ['Sector', s.sector],
+    ['Currency', 'USD'],
+    ['Country', 'United States'],
+  ].map(([k,v])=>`<div class="flex justify-between text-sm"><span class="text-gray-500">${k}</span><span class="font-bold">${v}</span></div>`).join('');
+
+  document.getElementById('stockAbout').textContent = s.about;
+
+  const plans = [
+    {name:'ELITE 1',roi:10.5,days:7,min:'None'},
+    {name:'Silver',roi:15.25,days:5,min:'None'},
+    {name:'Bronze',roi:12.0,days:7,min:'$1,000'},
+    {name:'Gold',roi:28.25,days:21,min:'$25,000'},
+    {name:'Pro IV',roi:35.0,days:30,min:'$100,000'},
+  ];
+  document.getElementById('buyPlansList').innerHTML = plans.map(p=>`
+    <div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-100">
+      <div><div class="font-bold text-gray-900 text-sm">${p.name}</div><div class="text-xs text-gray-500">${p.days} days · Min: ${p.min}</div></div>
+      <div class="font-black text-green-600">${p.roi}% ROI</div>
+    </div>`).join('');
+
+  // Load TradingView chart
+  const container = document.getElementById('tv-chart-container');
+  container.innerHTML = '';
+  const script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.textContent = JSON.stringify({
+    autosize:true, symbol:`${s.exchange}:${s.ticker}`,
+    interval:'D', timezone:'America/New_York',
+    theme:'light', style:'1', locale:'en',
+    toolbar_bg:'#f1f3f6', enable_publishing:false,
+    allow_symbol_change:true, height:420,
+  });
+  container.appendChild(script);
+
+  switchTab('chart', document.querySelector('.tab-btn'));
+  document.getElementById('stockModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+window.closeStockModal = function() {
+  document.getElementById('stockModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+window.switchTab = function(name, btn) {
+  ['chart','info','buy','sell'].forEach(t=>document.getElementById('tab-'+t).classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  if (btn) btn.classList.add('active');
+}
+
+window.proceedToBuy = function() {
+  closeStockModal();
+  window.location.href = 'user-dashboard.html';
+}
+
+window.toggleSidebar = function() {
+  const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
+  if (window.innerWidth<768) { s.classList.toggle('open'); o.classList.toggle('show'); }
+  else { s.style.transform = s.style.transform==='translateX(-260px)'?'':'translateX(-260px)'; document.getElementById('main').style.marginLeft = s.style.transform?'0':'260px'; }
+}
+window.closeSidebar = function() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+document.getElementById('pageDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+filterStocks();
+</script>
+
+</body>
+</html>
