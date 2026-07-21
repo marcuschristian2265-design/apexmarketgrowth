@@ -930,8 +930,9 @@ document.addEventListener('click', e => {
       if (totalEarningsDelta > 0) {
         const userSnap = await getDoc(doc(db,'users',currentUser.uid));
         const ud = userSnap.data();
-        const newBalance = parseFloat(((ud.balance||0) + totalEarningsDelta).toFixed(2));
         const newTotalEarnings = parseFloat(((ud.totalEarnings||0) + totalEarningsDelta).toFixed(2));
+        // Balance = totalDeposits + totalEarnings (minus any withdrawals already made)
+        const newBalance = parseFloat(((ud.totalDeposits||0) + newTotalEarnings - (ud.totalWithdrawals||0)).toFixed(2));
         await updateDoc(doc(db,'users',currentUser.uid), {
           balance: newBalance,
           totalEarnings: newTotalEarnings
