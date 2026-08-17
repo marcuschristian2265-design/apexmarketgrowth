@@ -536,9 +536,11 @@ document.addEventListener('click', e => {
     <div class="section" id="sec-copytrade">
       <div class="mb-6">
         <h2 class="text-2xl font-black text-gray-900">Copy Trading</h2>
-        <p class="text-gray-500 text-sm mt-1">Allocate funds to expert traders and earn passively. All trades run for 5 days.</p>
+        <p class="text-gray-500 text-sm mt-1">Allocate funds to expert traders and earn passively. All experts charge a 10% profit share.</p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <!-- James K. -->
         <div class="stat-card">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:var(--maroon)">JK</div>
@@ -548,10 +550,12 @@ document.addEventListener('click', e => {
           <div class="grid grid-cols-3 gap-2 text-center mb-4">
             <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">342</div><div class="text-xs text-gray-500">Followers</div></div>
             <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">87%</div><div class="text-xs text-gray-500">Win rate</div></div>
-            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">5 days</div><div class="text-xs text-gray-500">Duration</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">10%</div><div class="text-xs text-gray-500">Profit share</div></div>
           </div>
           <button onclick="openCopyModal('James K.',24.5,'Crypto Specialist','JK','#861535')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
         </div>
+
+        <!-- Sarah M. -->
         <div class="stat-card">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:#1e40af">SM</div>
@@ -561,10 +565,12 @@ document.addEventListener('click', e => {
           <div class="grid grid-cols-3 gap-2 text-center mb-4">
             <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">521</div><div class="text-xs text-gray-500">Followers</div></div>
             <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">91%</div><div class="text-xs text-gray-500">Win rate</div></div>
-            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">5 days</div><div class="text-xs text-gray-500">Duration</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">10%</div><div class="text-xs text-gray-500">Profit share</div></div>
           </div>
           <button onclick="openCopyModal('Sarah M.',18.2,'Forex Expert','SM','#1e40af')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
         </div>
+
+        <!-- Robert O. -->
         <div class="stat-card">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:#065f46">RO</div>
@@ -574,10 +580,29 @@ document.addEventListener('click', e => {
           <div class="grid grid-cols-3 gap-2 text-center mb-4">
             <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">198</div><div class="text-xs text-gray-500">Followers</div></div>
             <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">79%</div><div class="text-xs text-gray-500">Win rate</div></div>
-            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">5 days</div><div class="text-xs text-gray-500">Duration</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">10%</div><div class="text-xs text-gray-500">Profit share</div></div>
           </div>
           <button onclick="openCopyModal('Robert O.',31.8,'Gold & Indices','RO','#065f46')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
         </div>
+
+        <!-- Paul Martinelli -->
+        <div class="stat-card" style="border: 2px solid var(--maroon);">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style="background:#7c3aed">PM</div>
+            <div>
+              <div class="font-bold text-gray-900">Paul Martinelli</div>
+              <div class="text-xs text-gray-500">Stock Pro</div>
+            </div>
+            <div class="ml-auto text-right"><div class="text-xs text-gray-500">ROI</div><div class="font-black text-green-600">+42.0%</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-4">
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">2,155</div><div class="text-xs text-gray-500">Followers</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">95%</div><div class="text-xs text-gray-500">Win rate</div></div>
+            <div class="bg-gray-50 rounded-xl p-2"><div class="text-xs font-bold text-gray-900">10%</div><div class="text-xs text-gray-500">Profit share</div></div>
+          </div>
+          <button onclick="openCopyModal('Paul Martinelli',42.0,'Stock Pro','PM','#7c3aed')" class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">Copy Trader</button>
+        </div>
+
       </div>
       <!-- Active copy trades list -->
       <div class="stat-card mt-6">
@@ -606,8 +631,8 @@ document.addEventListener('click', e => {
             <div id="modalRoi" class="font-black text-green-600 text-lg"></div>
           </div>
           <div class="bg-gray-50 rounded-xl p-3 text-center">
-            <div class="text-xs text-gray-500">Duration</div>
-            <div class="font-black text-gray-900 text-lg">5 days</div>
+            <div class="text-xs text-gray-500">Profit Share</div>
+            <div class="font-black text-gray-900 text-lg">10%</div>
           </div>
           <div class="bg-gray-50 rounded-xl p-3 text-center">
             <div class="text-xs text-gray-500">Balance</div>
@@ -624,15 +649,15 @@ document.addEventListener('click', e => {
           <div class="space-y-2">
             <div class="flex justify-between text-sm"><span class="text-gray-600">Amount allocating</span><span class="font-bold text-gray-900" id="previewAmount">$0</span></div>
             <div class="flex justify-between text-sm"><span class="text-gray-600">Expected ROI (<span id="previewRoiPct"></span>%)</span><span class="font-bold text-green-600" id="previewEarnings">+$0</span></div>
-            <div class="flex justify-between text-sm"><span class="text-gray-600">Duration</span><span class="font-bold text-gray-900">5 days</span></div>
+            <div class="flex justify-between text-sm"><span class="text-gray-600">Profit Share</span><span class="font-bold text-gray-900">10% of earnings</span></div>
             <div class="border-t border-blue-200 pt-2 flex justify-between text-sm">
-              <span class="font-bold text-gray-700">Total return after 5 days</span>
+              <span class="font-bold text-gray-700">Total estimated return</span>
               <span class="font-black text-green-700" id="previewTotal">$0</span>
             </div>
           </div>
         </div>
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
-          <div class="text-xs text-yellow-800 leading-relaxed">⚠️ The allocated amount will be <strong>deducted from your balance immediately</strong>. Your returns will be credited after 5 days upon admin approval.</div>
+          <div class="text-xs text-yellow-800 leading-relaxed">⚠️ The allocated amount will be <strong>deducted from your balance immediately</strong>. A 10% profit share is charged on earnings. Returns are credited upon completion.</div>
         </div>
         <div id="copyModalErr" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm mb-4"></div>
         <div class="flex gap-3">
