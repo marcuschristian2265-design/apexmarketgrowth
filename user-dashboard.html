@@ -84,8 +84,8 @@
       .mobile-deposit  { display: block; }
       .desktop-deposit { display: none; }
     }
-    .deposit-step { display: none; }
-    .deposit-step.active { display: block; }
+    .deposit-step { display: none !important; }
+    .deposit-step.active { display: block !important; }
     .mobile-card {
       background: #fff; border-radius: 20px;
       border: 1px solid #e5e7eb; padding: 24px;
@@ -965,33 +965,57 @@ document.addEventListener('click', e => {
   });
 
   async function loadUserData() {
-    console.log('Loading user data for:', currentUser.uid);
-    const snap = await getDoc(doc(db, 'users', currentUser.uid));
-    console.log('User data exists:', snap.exists());
-    if (snap.exists()) {
-      userData = snap.data();
-      // Update UI
-      const name  = userData.fullName || 'User';
-      const email = userData.email || '';
-      const bal   = '$' + (userData.balance || 0).toLocaleString('en-US', {minimumFractionDigits:2});
-      document.getElementById('sidebarName').textContent = name;
-      document.getElementById('sidebarEmail').textContent = email;
-      document.getElementById('sidebarBalance').textContent = bal;
-      document.getElementById('topbarBalance').textContent = bal;
-      document.getElementById('welcomeName').textContent = name.split(' ')[0];
-      document.getElementById('statBalance').textContent = bal;
-      document.getElementById('statDeposits').textContent = '$' + (userData.totalDeposits||0).toLocaleString('en-US',{minimumFractionDigits:2});
-      document.getElementById('statEarnings').textContent = '$' + (userData.totalEarnings||0).toLocaleString('en-US',{minimumFractionDigits:2});
-      document.getElementById('statWithdrawals').textContent = '$' + (userData.totalWithdrawals||0).toLocaleString('en-US',{minimumFractionDigits:2});
-      document.getElementById('withdrawBalance').textContent = bal;
-      const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-      document.getElementById('avatarCircle').textContent = initials;
-      document.getElementById('topbarAvatar').textContent = initials;
-      // Settings
-      document.getElementById('settingsName').value    = userData.fullName || '';
-      document.getElementById('settingsEmail').value   = userData.email || '';
-      document.getElementById('settingsPhone').value   = userData.phone || '';
-      document.getElementById('settingsCountry').value = userData.country || '';
+    try {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (snap.exists()) {
+        userData = snap.data();
+        const name  = userData.fullName || currentUser.displayName || 'User';
+        const email = userData.email || currentUser.email || '';
+        const bal   = '$' + (userData.balance || 0).toLocaleString('en-US', {minimumFractionDigits:2});
+        const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+        // Safely update each element
+        const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+
+        set('sidebarName', name);
+        set('sidebarEmail', email);
+        set('sidebarBalance', bal);
+        set('topbarBalance', bal);
+        set('welcomeName', name.split(' ')[0]);
+        set('statBalance', bal);
+        set('statDeposits', '$' + (userData.totalDeposits||0).toLocaleString('en-US',{minimumFractionDigits:2}));
+        set('statEarnings', '$' + (userData.totalEarnings||0).toLocaleString('en-US',{minimumFractionDigits:2}));
+        set('statWithdrawals', '$' + (userData.totalWithdrawals||0).toLocaleString('en-US',{minimumFractionDigits:2}));
+        set('withdrawBalance', bal);
+        set('avatarCircle', initials);
+        set('topbarAvatar', initials);
+
+        setVal('settingsName', userData.fullName || '');
+        setVal('settingsEmail', email);
+        setVal('settingsPhone', userData.phone || '');
+        setVal('settingsCountry', userData.country || '');
+      } else {
+        // User document doesn't exist yet - use auth data
+        const name = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+        const email = currentUser.email || '';
+        const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        set('sidebarName', name);
+        set('sidebarEmail', email);
+        set('welcomeName', name.split(' ')[0]);
+        set('avatarCircle', name[0]?.toUpperCase() || '?');
+        set('topbarAvatar', name[0]?.toUpperCase() || '?');
+      }
+    } catch(err) {
+      console.error('loadUserData error:', err);
+      // Fallback to auth data
+      const name = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+      const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+      set('sidebarName', name);
+      set('sidebarEmail', currentUser.email || '');
+      set('welcomeName', name.split(' ')[0]);
+      set('avatarCircle', name[0]?.toUpperCase() || '?');
+      set('topbarAvatar', name[0]?.toUpperCase() || '?');
     }
   }
 
@@ -1297,10 +1321,19 @@ document.addEventListener('click', e => {
   }
 
   function setMobileStep(step) {
-    [1,2,3].forEach(i => {
-      const s = document.getElementById('mstep'+i);
-      if (s) { s.classList.remove('active'); if (i === step) s.classList.add('active'); }
-    });
+    console.log('Setting mobile step to:', step);
+    for (let i = 1; i <= 3; i++) {
+      const s = document.getElementById('mstep' + i);
+      if (s) {
+        s.classList.remove('active');
+        s.style.display = 'none';
+      }
+    }
+    const target = document.getElementById('mstep' + step);
+    if (target) {
+      target.classList.add('active');
+      target.style.display = 'block';
+    }
     setMobileDots(step);
   }
 
@@ -1315,20 +1348,36 @@ document.addEventListener('click', e => {
   window.goMobileStep1 = function() { setMobileStep(1); }
 
   window.goMobileStep2 = function() {
-    const amount = document.getElementById('mDepositAmount')?.value;
-    const errEl  = document.getElementById('mStep1Err');
-    errEl.classList.add('hidden');
+    const amountEl = document.getElementById('mDepositAmount');
+    const errEl    = document.getElementById('mStep1Err');
+    const amount   = amountEl ? amountEl.value : '';
+
+    if (errEl) errEl.classList.add('hidden');
+
     if (!amount || Number(amount) < 10) {
-      errEl.textContent = 'Please enter a minimum amount of $10.';
-      errEl.classList.remove('hidden'); return;
+      if (errEl) {
+        errEl.textContent = 'Please enter a minimum amount of $10.';
+        errEl.classList.remove('hidden');
+      }
+      return;
     }
-    const coin = document.getElementById('mDepositCrypto')?.value || 'BTC';
-    document.getElementById('mWalletAddr').textContent = (window._wallets||{})[coin] || '';
-    document.getElementById('mQRCryptoName').textContent = cryptoNames[coin] || coin;
-    document.getElementById('mQRNetwork').textContent = coin;
-    document.getElementById('mQRImage').src = `assets/qr/${coin.toLowerCase()}-qr.jpeg`;
-    document.getElementById('mUsdAmount').textContent = `≈ $${Number(amount).toLocaleString()}`;
-    document.getElementById('mCryptoAmount').textContent = `${amount} USD equivalent`;
+
+    const cryptoEl  = document.getElementById('mDepositCrypto');
+    const coin      = cryptoEl ? cryptoEl.value : 'BTC';
+    const walletMap = window._wallets || {};
+    const addr      = walletMap[coin] || '';
+    const names     = { BTC:'Bitcoin', ETH:'Ethereum', USDT:'Tether', BNB:'BNB Chain', LTC:'Litecoin' };
+
+    const safeSet = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const safeSetSrc = (id, val) => { const el = document.getElementById(id); if (el) el.src = val; };
+
+    safeSet('mWalletAddr', addr);
+    safeSet('mQRCryptoName', names[coin] || coin);
+    safeSet('mQRNetwork', coin);
+    safeSet('mUsdAmount', '≈ $' + Number(amount).toLocaleString());
+    safeSet('mCryptoAmount', amount + ' USD');
+    safeSetSrc('mQRImage', 'assets/qr/' + coin.toLowerCase() + '-qr.jpeg');
+
     setMobileStep(2);
   }
 
