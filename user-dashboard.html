@@ -167,11 +167,7 @@ document.addEventListener('click', e => {
 <!-- Mobile overlay -->
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<!-- FORCE VISIBLE TEST BANNER -->
-<div id="testBanner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:red;color:white;text-align:center;padding:12px;font-size:16px;font-weight:bold;font-family:monospace">
-  ✅ NEW FILE LOADED - AUTH: <span id="authStatus">Checking...</span>
-</div>
-<div style="height:50px"></div>
+
 
 <!-- ══════════════════════════════════════
      SIDEBAR
@@ -314,10 +310,7 @@ document.addEventListener('click', e => {
 
   <!-- Page content -->
   <div class="p-6">
-    <!-- Debug banner - remove after fixing -->
-    <div id="debugBanner" style="background:#1e40af;color:#fff;padding:10px 16px;border-radius:12px;margin-bottom:16px;font-size:12px;font-family:monospace;display:none">
-      <strong>DEBUG:</strong> <span id="debugMsg">Loading...</span>
-    </div>
+
 
     <!-- ══ OVERVIEW ══ -->
     <div class="section active" id="sec-overview">
@@ -958,8 +951,8 @@ document.addEventListener('click', e => {
 
   // ── Auth guard ──
   auth.onAuthStateChanged(async (user) => {
-    const authEl = document.getElementById('authStatus');
-    if (authEl) authEl.textContent = user ? 'LOGGED IN: ' + user.email : 'NOT LOGGED IN';
+
+
 
     if (!user) {
       setTimeout(() => window.location.href = 'login.html', 1500);
@@ -969,12 +962,7 @@ document.addEventListener('click', e => {
 
     try {
       await loadUserData();
-      setTimeout(() => {
-        const b = document.getElementById('testBanner');
-        const s = b?.nextElementSibling;
-        if(b) b.style.display='none';
-        if(s) s.style.display='none';
-      }, 4000);
+
       loadPlans();
       loadTransactions();
       loadNotifications();
@@ -982,7 +970,7 @@ document.addEventListener('click', e => {
       setDate();
     } catch(err) {
       console.error('Dashboard error:', err);
-      if (authEl) authEl.textContent = 'ERROR: ' + err.message;
+
     }
   });
 
@@ -1013,7 +1001,7 @@ document.addEventListener('click', e => {
       safeSetVal('settingsPhone',   userData.phone||'');
       safeSetVal('settingsCountry', userData.country||'');
 
-      document.getElementById('authStatus').textContent = 'DATA LOADED ✅ ' + name;
+
     } else {
       const name = currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
       safeSet('sidebarName',  name);
@@ -1294,6 +1282,8 @@ document.addEventListener('click', e => {
       document.getElementById('depositAmount').value='';
       safeSet('proofLabel','Click to upload screenshot');
       loadTransactions(); loadNotifications();
+      // Redirect to overview after 2 seconds
+      setTimeout(() => showSection('overview'), 2000);
     } catch(e){if(errEl){errEl.textContent='Error: '+e.message;errEl.classList.remove('hidden');}}
   }
 
@@ -1601,10 +1591,10 @@ document.addEventListener('click', e => {
         status:'pending', proofName:file.name,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
-      if(sucEl){sucEl.textContent='Deposit submitted! Reviewed within 24 hours.';sucEl.classList.remove('hidden');}
+      if(sucEl){sucEl.textContent='Deposit submitted! Redirecting to overview...';sucEl.classList.remove('hidden');}
       safeSet('mProofLabel','Tap to upload screenshot');
-      setTimeout(()=>setMobileStep(1),3000);
       loadTransactions(); loadNotifications();
+      setTimeout(() => { setMobileStep(1); showSection('overview'); }, 2000);
     } catch(e){if(errEl){errEl.textContent='Error: '+e.message;errEl.classList.remove('hidden');}}
   }
 
