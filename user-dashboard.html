@@ -167,6 +167,12 @@ document.addEventListener('click', e => {
 <!-- Mobile overlay -->
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
+<!-- FORCE VISIBLE TEST BANNER -->
+<div id="testBanner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:red;color:white;text-align:center;padding:12px;font-size:16px;font-weight:bold;font-family:monospace">
+  ✅ NEW FILE LOADED - AUTH: <span id="authStatus">Checking...</span>
+</div>
+<div style="height:50px"></div>
+
 <!-- ══════════════════════════════════════
      SIDEBAR
 ══════════════════════════════════════ -->
@@ -953,23 +959,26 @@ document.addEventListener('click', e => {
 
   // ── Auth guard ──
   onAuthStateChanged(auth, async (user) => {
-    const banner = document.getElementById('debugBanner');
-    const msg    = document.getElementById('debugMsg');
-    if (banner) banner.style.display = 'block';
+    const authEl = document.getElementById('authStatus');
 
     if (!user) {
-      if (msg) msg.textContent = 'No user session - redirecting to login...';
-      setTimeout(() => window.location.href = 'login.html', 1000);
+      if (authEl) authEl.textContent = 'NOT LOGGED IN - redirecting...';
+      setTimeout(() => window.location.href = 'login.html', 2000);
       return;
     }
 
     currentUser = user;
-    if (msg) msg.textContent = 'Auth OK: ' + user.email + ' | Loading data...';
+    if (authEl) authEl.textContent = 'LOGGED IN as ' + user.email;
 
     try {
       await loadUserData();
-      if (msg) msg.textContent = 'Data loaded! UID: ' + user.uid;
-      if (banner) setTimeout(() => banner.style.display = 'none', 3000);
+      if (authEl) authEl.textContent = 'DATA LOADED ✅ ' + user.email;
+      setTimeout(() => {
+        const b = document.getElementById('testBanner');
+        const spacer = b?.nextElementSibling;
+        if (b) b.style.display = 'none';
+        if (spacer) spacer.style.display = 'none';
+      }, 5000);
       loadPlans();
       loadTransactions();
       loadNotifications();
@@ -977,7 +986,7 @@ document.addEventListener('click', e => {
       setDate();
     } catch(err) {
       console.error('Dashboard load error:', err);
-      if (msg) msg.textContent = 'ERROR: ' + err.message;
+      if (authEl) authEl.textContent = 'ERROR: ' + err.message;
     }
   });
 
