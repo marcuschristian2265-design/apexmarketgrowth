@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- AMG Dashboard v3.2 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1269,6 +1270,11 @@ document.addEventListener('click', e => {
 
   // Init BTC
   document.getElementById('walletAddress').textContent = wallets['BTC'];
+
+  // Initialize mobile wallet display
+  if (document.getElementById('mWalletAddr')) {
+    document.getElementById('mWalletAddr').textContent = wallets['BTC'];
+  }
 
   // ── Copy wallet ──
   // ── Mobile deposit flow functions ──
