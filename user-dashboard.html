@@ -77,6 +77,36 @@
     /* ── Crypto tabs ── */
     .crypto-tab { padding: 10px 18px; border-radius: 10px; border: 1.5px solid #e5e7eb; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; background: #fff; }
 
+    /* ── Mobile Investment Modal ── */
+    .mobile-invest-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      align-items: flex-end; justify-content: center;
+      background: rgba(0,0,0,0.5);
+    }
+    @media (max-width: 768px) {
+      .mobile-invest-modal.open { display: flex; }
+    }
+    .mobile-invest-sheet {
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      width: 100%; max-height: 85vh;
+      overflow-y: auto; padding: 8px 20px 32px;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    .sheet-handle {
+      width: 40px; height: 4px; border-radius: 999px;
+      background: #e5e7eb; margin: 12px auto 20px; display: block;
+    }
+    /* Hide desktop invest panel on mobile */
+    @media (max-width: 768px) {
+      #investPanel { display: none !important; }
+    }
+
     /* ── Mobile Deposit Flow ── */
     .mobile-deposit { display: none; }
     .desktop-deposit { display: block; }
@@ -515,6 +545,84 @@ document.addEventListener('click', e => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ MOBILE INVEST MODAL (bottom sheet) ══ -->
+    <div id="mobileInvestModal" class="mobile-invest-modal" onclick="closeMobileInvestModal(event)">
+      <div class="mobile-invest-sheet" onclick="event.stopPropagation()">
+        <span class="sheet-handle"></span>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-lg font-black text-gray-900" id="mInvestPlanName">Plan Name</div>
+            <div class="text-xs text-gray-500 mt-0.5" id="mInvestPlanAssets"></div>
+          </div>
+          <button onclick="closeMobileInvestModal()" style="background:none;border:none;font-size:24px;color:#9ca3af;cursor:pointer;padding:0">×</button>
+        </div>
+
+        <!-- Plan stats -->
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div style="background:#f8fafc;border-radius:14px;padding:12px;text-align:center">
+            <div class="text-xs text-gray-500 mb-1">ROI</div>
+            <div class="font-black text-lg" style="color:var(--maroon)" id="mInvestROI">0%</div>
+          </div>
+          <div style="background:#f8fafc;border-radius:14px;padding:12px;text-align:center">
+            <div class="text-xs text-gray-500 mb-1">Duration</div>
+            <div class="font-black text-lg text-gray-900" id="mInvestDays">0 days</div>
+          </div>
+          <div style="background:#f8fafc;border-radius:14px;padding:12px;text-align:center">
+            <div class="text-xs text-gray-500 mb-1">Min</div>
+            <div class="font-black text-lg text-gray-900" id="mInvestMin">None</div>
+          </div>
+        </div>
+
+        <!-- Balance -->
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+          <div class="text-sm font-semibold text-gray-600">Your Balance</div>
+          <div class="text-lg font-black text-green-700" id="mInvestBalance">$0.00</div>
+        </div>
+
+        <!-- Amount input -->
+        <div class="mb-4">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px">Amount to Invest (USD)</label>
+          <input type="number" id="mInvestAmount" class="mobile-input" placeholder="Enter amount" min="10"
+            oninput="updateMobileInvestPreview()" style="font-size:16px" />
+        </div>
+
+        <!-- Live preview -->
+        <div id="mInvestPreview" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:14px;margin-bottom:16px">
+          <div class="text-xs font-bold text-blue-800 mb-3">📊 Investment Summary</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span class="text-gray-600">Amount investing</span>
+            <span class="font-bold text-gray-900" id="mPreviewAmount">$0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span class="text-gray-600">Daily earning</span>
+            <span class="font-bold text-blue-700" id="mPreviewDaily">$0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <span class="text-gray-600">Total earnings</span>
+            <span class="font-bold text-green-600" id="mPreviewEarnings">+$0</span>
+          </div>
+          <div style="border-top:1px solid #bfdbfe;padding-top:8px;margin-top:4px;display:flex;justify-content:space-between;font-size:13px">
+            <span class="font-bold text-gray-700">Total return</span>
+            <span class="font-black text-green-700" id="mPreviewTotal">$0</span>
+          </div>
+        </div>
+
+        <!-- Errors / Success -->
+        <div id="mInvestErr" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px;color:#dc2626;font-size:13px;margin-bottom:14px"></div>
+        <div id="mInvestSuccess" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;color:#065f46;font-size:13px;margin-bottom:14px"></div>
+
+        <!-- Buttons -->
+        <button onclick="confirmMobileInvest()" class="mobile-btn mobile-btn-primary" style="margin-bottom:10px">
+          Confirm & Invest
+        </button>
+        <button onclick="closeMobileInvestModal()" class="mobile-btn" style="background:#f3f4f6;color:#374151">
+          Cancel
+        </button>
       </div>
     </div>
 
@@ -1322,6 +1430,14 @@ document.addEventListener('click', e => {
     document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
     const card = document.getElementById('plan-'+planId);
     if(card) card.classList.add('selected');
+
+    // Mobile: open bottom sheet modal
+    if (window.innerWidth <= 768) {
+      openMobileInvestModal();
+      return;
+    }
+
+    // Desktop: show inline panel
     const panel = document.getElementById('investPanel');
     if(panel) panel.classList.remove('hidden');
     const bal = userData?.balance||0;
@@ -1338,6 +1454,119 @@ document.addEventListener('click', e => {
       <label class="block text-xs font-semibold text-gray-600 mb-2">Amount to Invest (USD)</label>
       <input type="number" id="investAmountInput" class="input-field w-full" placeholder="Enter amount" min="${selectedPlan.min||10}" oninput="updateInvestPreview()" />
       <div id="investPreviewBox" class="hidden mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm"></div>`;
+  }
+
+  // Mobile invest modal functions
+  function openMobileInvestModal() {
+    if (!selectedPlan) return;
+    const bal = userData?.balance || 0;
+    safeSet('mInvestPlanName', selectedPlan.name);
+    safeSet('mInvestPlanAssets', 'Assets: ' + selectedPlan.assets);
+    safeSet('mInvestROI', selectedPlan.roi + '%');
+    safeSet('mInvestDays', selectedPlan.days + ' days');
+    safeSet('mInvestMin', selectedPlan.min === 0 ? 'None' : '$' + selectedPlan.min.toLocaleString());
+    safeSet('mInvestBalance', '$' + bal.toLocaleString());
+    const amt = document.getElementById('mInvestAmount');
+    if (amt) { amt.value = ''; amt.min = selectedPlan.min || 10; }
+    const prev = document.getElementById('mInvestPreview');
+    if (prev) prev.style.display = 'none';
+    const err = document.getElementById('mInvestErr');
+    if (err) err.style.display = 'none';
+    const suc = document.getElementById('mInvestSuccess');
+    if (suc) suc.style.display = 'none';
+    const modal = document.getElementById('mobileInvestModal');
+    if (modal) modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  window.closeMobileInvestModal = function(e) {
+    if (e && e.target !== document.getElementById('mobileInvestModal')) return;
+    const modal = document.getElementById('mobileInvestModal');
+    if (modal) modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  window.updateMobileInvestPreview = function() {
+    const amount = parseFloat(document.getElementById('mInvestAmount')?.value) || 0;
+    const prev   = document.getElementById('mInvestPreview');
+    if (!selectedPlan || amount <= 0) { if(prev) prev.style.display='none'; return; }
+    const totalEarnings = amount * (selectedPlan.roi / 100);
+    const dailyEarning  = totalEarnings / selectedPlan.days;
+    safeSet('mPreviewAmount',   '$' + amount.toLocaleString('en-US',{minimumFractionDigits:2}));
+    safeSet('mPreviewDaily',    '$' + dailyEarning.toFixed(2));
+    safeSet('mPreviewEarnings', '+$' + totalEarnings.toFixed(2));
+    safeSet('mPreviewTotal',    '$' + (amount + totalEarnings).toFixed(2));
+    if (prev) prev.style.display = 'block';
+  }
+
+  window.confirmMobileInvest = async function() {
+    const amount  = parseFloat(document.getElementById('mInvestAmount')?.value);
+    const balance = userData?.balance || 0;
+    const errEl   = document.getElementById('mInvestErr');
+    const sucEl   = document.getElementById('mInvestSuccess');
+    if (errEl) errEl.style.display = 'none';
+    if (sucEl) sucEl.style.display = 'none';
+
+    if (!amount || amount <= 0) {
+      if (errEl) { errEl.textContent='Please enter a valid amount.'; errEl.style.display='block'; } return;
+    }
+    if (amount < selectedPlan.min) {
+      if (errEl) { errEl.textContent=`Minimum for this plan is $${selectedPlan.min.toLocaleString()}.`; errEl.style.display='block'; } return;
+    }
+    if (amount > balance) {
+      if (errEl) { errEl.textContent='Insufficient balance.'; errEl.style.display='block'; } return;
+    }
+
+    try {
+      const totalEarnings = parseFloat((amount*(selectedPlan.roi/100)).toFixed(2));
+      const dailyEarning  = parseFloat((totalEarnings/selectedPlan.days).toFixed(4));
+      const startDate     = new Date();
+      const endDate       = new Date(Date.now()+selectedPlan.days*86400000);
+
+      await db.collection('investments').add({
+        userId:currentUser.uid, userEmail:currentUser.email, userName:userData?.fullName||'',
+        planId:selectedPlan.id, planName:selectedPlan.name,
+        amount, roi:selectedPlan.roi, days:selectedPlan.days,
+        dailyEarning, totalEarnings, earnedSoFar:0,
+        startDate:startDate.toISOString(), endDate:endDate.toISOString(),
+        lastCreditDate:startDate.toISOString(), status:'active',
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      await db.collection('transactions').add({
+        userId:currentUser.uid, userEmail:currentUser.email,
+        type:'investment', planName:selectedPlan.name, amount, status:'active',
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      const newBalance = parseFloat((balance - amount).toFixed(2));
+      await db.collection('users').doc(currentUser.uid).update({balance: newBalance});
+
+      await db.collection('notifications').add({
+        userId:currentUser.uid, type:'investment', read:false,
+        title:'Investment Activated 📈',
+        message:`Your ${selectedPlan.name} plan is now active! $${amount.toLocaleString()} invested.`,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      if (sucEl) { sucEl.textContent='✅ Investment activated!'; sucEl.style.display='block'; }
+
+      await loadUserData();
+      loadTransactions();
+      loadMyInvestments();
+      loadNotifications();
+
+      // Close modal and go back to plans after 1.5s
+      setTimeout(() => {
+        const modal = document.getElementById('mobileInvestModal');
+        if (modal) modal.classList.remove('open');
+        document.body.style.overflow = '';
+        showSection('plans');
+      }, 1500);
+
+    } catch(e) {
+      if (errEl) { errEl.textContent='Error: '+e.message; errEl.style.display='block'; }
+    }
   }
 
   window.updateInvestPreview = function() {
