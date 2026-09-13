@@ -196,11 +196,14 @@
         window.location.href = 'user-dashboard.html';
 
       } catch (err) {
-        let msg = 'Something went wrong. Please try again.';
-        if (err.code === 'auth/user-not-found') msg = 'No account found with this email.';
-        if (err.code === 'auth/wrong-password') msg = 'Incorrect password. Please try again.';
-        if (err.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
-        if (err.code === 'auth/too-many-requests') msg = 'Too many failed attempts. Please try again later.';
+        let msg = 'Invalid email or password. Please check your credentials and try again.';
+        if (err.code === 'auth/user-not-found')     msg = 'No account found with this email address. Please register first.';
+        if (err.code === 'auth/wrong-password')      msg = 'Incorrect password. Please try again or use Forgot Password.';
+        if (err.code === 'auth/invalid-credential')  msg = 'Invalid email or password. Please check your credentials.';
+        if (err.code === 'auth/invalid-email')       msg = 'Please enter a valid email address.';
+        if (err.code === 'auth/user-disabled')       msg = 'This account has been suspended. Please contact support.';
+        if (err.code === 'auth/too-many-requests')   msg = 'Too many failed attempts. Please wait a few minutes and try again.';
+        if (err.code === 'auth/network-request-failed') msg = 'Network error. Please check your internet connection.';
         const errEl = document.getElementById('firebaseErr');
         errEl.textContent = msg;
         errEl.classList.remove('hidden');

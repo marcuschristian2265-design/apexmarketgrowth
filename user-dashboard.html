@@ -1278,11 +1278,10 @@ document.addEventListener('click', e => {
         message:`Your deposit of $${Number(amount).toLocaleString()} via ${selectedCrypto} is pending approval.`,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
-      if(sucEl){sucEl.textContent='Deposit submitted! Reviewed within 24 hours.';sucEl.classList.remove('hidden');}
       document.getElementById('depositAmount').value='';
       safeSet('proofLabel','Click to upload screenshot');
       loadTransactions(); loadNotifications();
-      // Redirect to overview after 2 seconds
+      // Silently redirect to overview after 2 seconds
       setTimeout(() => showSection('overview'), 2000);
     } catch(e){if(errEl){errEl.textContent='Error: '+e.message;errEl.classList.remove('hidden');}}
   }
@@ -1591,7 +1590,6 @@ document.addEventListener('click', e => {
         status:'pending', proofName:file.name,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
-      if(sucEl){sucEl.textContent='Deposit submitted! Redirecting to overview...';sucEl.classList.remove('hidden');}
       safeSet('mProofLabel','Tap to upload screenshot');
       loadTransactions(); loadNotifications();
       setTimeout(() => { setMobileStep(1); showSection('overview'); }, 2000);
