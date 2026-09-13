@@ -918,7 +918,7 @@ document.addEventListener('click', e => {
   let currentUser = null;
   let userData    = null;
 
-  // ── Wallet addresses — REPLACE WITH YOUR REAL ADDRESSES ──
+  // ── Wallet addresses ──
   const wallets = {
     BTC:  'bc1q8dem9vslcervht0tu8ampcf5tse3a3hpv57qgd',
     ETH:  '0x4a373995ceDd63f7CB81169508EA01dC12A9320A',
@@ -926,6 +926,8 @@ document.addEventListener('click', e => {
     BNB:  '0x4a373995ceDd63f7CB81169508EA01dC12A9320A',
     LTC:  'ltc1qmu4h78nz5je6t7ll49wrmkd6wj6t8h06wqaaem',
   };
+  // Expose wallets globally so mobile functions can access it
+  window._wallets = wallets;
 
   const cryptoNames = {
     BTC: 'Bitcoin (BTC)', ETH: 'Ethereum (ETH)',
@@ -1297,7 +1299,7 @@ document.addEventListener('click', e => {
 
   window.updateMobileWallet = function() {
     const coin = document.getElementById('mDepositCrypto')?.value || 'BTC';
-    document.getElementById('mWalletAddr').textContent = wallets[coin] || '';
+    document.getElementById('mWalletAddr').textContent = (window._wallets||{})[coin] || '';
     document.getElementById('mQRCryptoName').textContent = cryptoNames[coin] || coin;
     document.getElementById('mQRNetwork').textContent = coin;
     document.getElementById('mQRImage').src = `assets/qr/${coin.toLowerCase()}-qr.jpeg`;
@@ -1314,7 +1316,7 @@ document.addEventListener('click', e => {
       errEl.classList.remove('hidden'); return;
     }
     const coin = document.getElementById('mDepositCrypto')?.value || 'BTC';
-    document.getElementById('mWalletAddr').textContent = wallets[coin];
+    document.getElementById('mWalletAddr').textContent = (window._wallets||{})[coin] || '';
     document.getElementById('mQRCryptoName').textContent = cryptoNames[coin] || coin;
     document.getElementById('mQRNetwork').textContent = coin;
     document.getElementById('mQRImage').src = `assets/qr/${coin.toLowerCase()}-qr.jpeg`;
@@ -1326,7 +1328,7 @@ document.addEventListener('click', e => {
   window.goMobileStep3 = function() { setMobileStep(3); }
 
   window.copyMobileWallet = function() {
-    const addr = document.getElementById('mWalletAddr').textContent;
+    const addr = document.getElementById('mWalletAddr').textContent || '';
     navigator.clipboard.writeText(addr).then(() => {
       const btn = document.getElementById('mCopyBtn');
       btn.textContent = '✓ Copied!';
@@ -1357,7 +1359,7 @@ document.addEventListener('click', e => {
       await addDoc(collection(db, 'deposits'), {
         userId: currentUser.uid, userEmail: currentUser.email,
         userName: userData?.fullName || '', crypto: coin,
-        wallet: wallets[coin], amount: Number(amount),
+        wallet: (window._wallets||{})[coin] || '', amount: Number(amount),
         status: 'pending', proofName: file.name, createdAt: serverTimestamp()
       });
       sucEl.textContent = 'Deposit submitted! It will be reviewed and approved within 24 hours.';
