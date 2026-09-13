@@ -308,6 +308,10 @@ document.addEventListener('click', e => {
 
   <!-- Page content -->
   <div class="p-6">
+    <!-- Debug banner - remove after fixing -->
+    <div id="debugBanner" style="background:#1e40af;color:#fff;padding:10px 16px;border-radius:12px;margin-bottom:16px;font-size:12px;font-family:monospace;display:none">
+      <strong>DEBUG:</strong> <span id="debugMsg">Loading...</span>
+    </div>
 
     <!-- ══ OVERVIEW ══ -->
     <div class="section active" id="sec-overview">
@@ -949,11 +953,23 @@ document.addEventListener('click', e => {
 
   // ── Auth guard ──
   onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = 'login.html'; return; }
+    const banner = document.getElementById('debugBanner');
+    const msg    = document.getElementById('debugMsg');
+    if (banner) banner.style.display = 'block';
+
+    if (!user) {
+      if (msg) msg.textContent = 'No user session - redirecting to login...';
+      setTimeout(() => window.location.href = 'login.html', 1000);
+      return;
+    }
+
     currentUser = user;
-    console.log('User logged in:', user.uid);
+    if (msg) msg.textContent = 'Auth OK: ' + user.email + ' | Loading data...';
+
     try {
       await loadUserData();
+      if (msg) msg.textContent = 'Data loaded! UID: ' + user.uid;
+      if (banner) setTimeout(() => banner.style.display = 'none', 3000);
       loadPlans();
       loadTransactions();
       loadNotifications();
@@ -961,6 +977,7 @@ document.addEventListener('click', e => {
       setDate();
     } catch(err) {
       console.error('Dashboard load error:', err);
+      if (msg) msg.textContent = 'ERROR: ' + err.message;
     }
   });
 
