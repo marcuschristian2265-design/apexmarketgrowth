@@ -4,10 +4,15 @@ const { getAdmin, authUser } = require('./_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  let stage = 'start';
   try {
+    const missing = ['FIREBASE_SERVICE_ACCOUNT','SMTP_USER','SMTP_PASS'].filter(k => !process.env[k]);
+    if (missing.length) return res.status(500).json({ error: 'Server setup incomplete (missing: ' + missing.join(', ') + ').' });
+    stage = 'auth';
     const user = await authUser(req);
     if (!user || !user.email) return res.status(401).json({ error: 'Please sign in again.' });
 
+    stage = 'firestore';
     const db = getAdmin().firestore();
     const ref = db.collection('emailOtps').doc(user.uid);
     const snap = await ref.get();
@@ -19,6 +24,7 @@ module.exports = async (req, res) => {
     const hash = crypto.createHash('sha256').update(code + user.uid).digest('hex');
     await ref.set({ hash, expiresAt: Date.now() + 10 * 60 * 1000, attempts: 0, sentAt: Date.now() });
 
+    stage = 'email';
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
       port: Number(process.env.SMTP_PORT || 465),
@@ -40,7 +46,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ ok: true });
   } catch (e) {
-    console.error('send-otp', e);
-    res.status(500).json({ error: 'Could not send the code. Please try again.' });
+    console.error('send-otp failed:', e && e.code, e && e.message);
+    res.status(500).json({ error: 'Could not send the code (' + (typeof stage !== 'undefined' ? stage : 'unknown') + (e && e.code ? ': ' + e.code : '') + '). Please try again.' });
   }
 };
